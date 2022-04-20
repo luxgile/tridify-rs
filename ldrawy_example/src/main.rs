@@ -29,7 +29,7 @@ fn main() {
             #version 330 core
             out vec4 color;
             void main() {
-                color = vec4(1.0, 0.0, 0.0, 1.0);
+                color = vec4(1.0, 1.0, 0.0, 1.0);
             }
             "#;
         let brush = Brush::from_source(wnd, vertex_src, fragment_src, None);
