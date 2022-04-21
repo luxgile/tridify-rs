@@ -1,12 +1,7 @@
 {
 	"folders": [
 		{
-			"name": "ldrawy",
-			"path": "ldrawy"
-		},
-		{
-			"name": "ldrawy_example",
-			"path": "ldrawy_example"
+			"path": "."
 		}
 	],
 	"settings": {}

@@ -1,7 +1,5 @@
 .gitignore
 Cargo.lock
-ldrawy_example/target/
-ldrawy_example/.vscode/
-ldrawy/.vscode/
-ldrawy/target/
+**/target/
+**/.vscode/
 **/*.rs.bk
