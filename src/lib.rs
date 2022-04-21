@@ -3,8 +3,11 @@ pub mod drawy {
     use std::time::{Duration, Instant};
 
     use glium::{
-        glutin::{self, event::Event},
-        implement_vertex, Display, Program, Surface, Version,
+        glutin::{
+            self,
+            event::{Event, VirtualKeyCode},
+        },
+        implement_vertex, Display, Program, Surface,
     };
 
     pub struct Color {
@@ -102,6 +105,11 @@ pub mod drawy {
                 match event {
                     glutin::event::WindowEvent::CloseRequested => {
                         return true;
+                    }
+                    glutin::event::WindowEvent::KeyboardInput { input, .. } => {
+                        if input.virtual_keycode.unwrap() == VirtualKeyCode::Escape {
+                            return true;
+                        }
                     }
                     _ => return false,
                 }
