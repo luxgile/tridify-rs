@@ -1,0 +1,5 @@
+edition = "2021"
+unstable_features = true
+empty_item_single_line = false
+fn_args_layout = "Compressed"
+fn_single_line = true

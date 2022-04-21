@@ -1,3 +1,4 @@
+#[macro_use]
 pub mod drawy {
 
     use std::time::{Duration, Instant};
@@ -18,9 +19,7 @@ pub mod drawy {
     }
 
     impl Color {
-        pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
-            Self { r, g, b, a }
-        }
+        pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self { Self { r, g, b, a } }
 
         pub const CLEAR: Color = Color::new(0.0, 0.0, 0.0, 0.0);
         pub const BLACK: Color = Color::new(0.0, 0.0, 0.0, 1.0);
@@ -118,21 +117,18 @@ pub mod drawy {
         }
 
         #[must_use]
-        pub fn display(&self) -> &Display {
-            &self.display
-        }
+        #[inline]
+        pub fn display(&self) -> &Display { &self.display }
 
         /// Get the canvas's delta time.
         #[must_use]
-        pub fn delta_time(&self) -> f64 {
-            self.delta_time
-        }
+        #[inline]
+        pub fn delta_time(&self) -> f64 { self.delta_time }
 
         /// Get the canvas's frame count.
         #[must_use]
-        pub fn frame_count(&self) -> u64 {
-            self.frame_count
-        }
+        #[inline]
+        pub fn frame_count(&self) -> u64 { self.frame_count }
     }
 
     implement_vertex!(Vertex, pos);
@@ -142,17 +138,30 @@ pub mod drawy {
     }
 
     impl Vertex {
-        pub fn from_viewport(x: f32, y: f32) -> Self {
-            Self { pos: [x, y] }
-        }
+        pub fn from_viewport(x: f32, y: f32) -> Self { Self { pos: [x, y] } }
         pub fn from_pixel(canvas: &Canvas, x: u32, y: u32) -> Self {
             let dim = canvas.frame.get_dimensions();
             Self {
                 pos: [x as f32 / dim.0 as f32, y as f32 / dim.1 as f32],
             }
         }
+        #[must_use]
+        #[inline]
+        pub fn x(&self) -> f32 { self.pos[0] }
+        #[must_use]
+        #[inline]
+        pub fn y(&self) -> f32 { self.pos[1] }
     }
 
+    #[macro_export]
+    macro_rules! vertex {
+        ($a:expr, $b:expr) => {
+            Vertex::from_viewport($a, $b)
+        };
+    }
+    pub(crate) use vertex;
+
+    ///Queue of shapes to be drawn. All shapes added to the same batch will be drawn at the same time using the same brush.
     #[derive(Default)]
     pub struct ShapeBatch {
         vertices: Vec<Vertex>,
@@ -160,17 +169,39 @@ pub mod drawy {
     }
 
     impl ShapeBatch {
-        pub fn add_triangle(&mut self, v0: Vertex, v1: Vertex, v2: Vertex) {
+        ///Add a triangle to the batch specifying its 3 vertices
+        pub fn add_triangle(&mut self, v: [Vertex; 3]) {
             let index = self.indices.len() as u32;
-            self.vertices.push(v0);
+            self.vertices.push(v[0]);
             self.indices.push(index);
-            self.vertices.push(v1);
+            self.vertices.push(v[1]);
             self.indices.push(index + 1);
-            self.vertices.push(v2);
+            self.vertices.push(v[2]);
             self.indices.push(index + 2);
+        }
+
+        ///Add a square to the batch specifying the center, width and height
+        pub fn add_square(&mut self, c: Vertex, w: f32, h: f32) {
+            //Adding vertices
+            let hw = w / 2.0;
+            let hh = h / 2.0;
+            self.vertices.push(vertex!(c.x() - hw, c.y() - hh));
+            self.vertices.push(vertex!(c.x() + hw, c.y() - hh));
+            self.vertices.push(vertex!(c.x() - hw, c.y() + hh));
+            self.vertices.push(vertex!(c.x() + hw, c.y() + hh));
+
+            //Adding indices
+            let index = self.indices.len() as u32;
+            self.indices.push(index);
+            self.indices.push(index + 1);
+            self.indices.push(index + 2);
+            self.indices.push(index + 2);
+            self.indices.push(index + 1);
+            self.indices.push(index + 3);
         }
     }
 
+    ///Buffers created from the batch and prepared to be sent directly to the GPU
     pub struct ShapeBuffer {
         vertex_buffer: glium::VertexBuffer<Vertex>,
         index_buffer: glium::IndexBuffer<u32>,
@@ -192,16 +223,36 @@ pub mod drawy {
         }
     }
 
+    ///Used to configurate how to draw shapes in the GPU
     pub struct Brush {
         program: Program,
     }
 
     impl Brush {
+        pub fn new_basic(wnd: &Window) -> Brush {
+            let program = glium::Program::from_source(
+                &wnd.display,
+                r#"
+            #version 330 core
+            in vec2 pos;
+            void main() {
+                gl_Position = vec4(pos, 0.0, 1.0);
+            }
+            "#,
+                r#"
+            #version 330 core
+            out vec4 color;
+            void main() {
+                color = vec4(1.0, 1.0, 0.0, 1.0);
+            }
+            "#,
+                None,
+            )
+            .unwrap();
+            Self { program }
+        }
         pub fn from_source<'a>(
-            wnd: &Window,
-            vertex: &'a str,
-            fragment: &'a str,
-            geometry: Option<&'a str>,
+            wnd: &Window, vertex: &'a str, fragment: &'a str, geometry: Option<&'a str>,
         ) -> Brush {
             let program =
                 glium::Program::from_source(&wnd.display, vertex, fragment, geometry).unwrap();
@@ -217,9 +268,7 @@ pub mod drawy {
         pub fn clear_color(&mut self, color: Color) {
             self.frame.clear_color(color.r, color.g, color.b, color.a);
         }
-        pub fn finish_canvas(self) -> Result<(), glium::SwapBuffersError> {
-            self.frame.finish()
-        }
+        pub fn finish_canvas(self) -> Result<(), glium::SwapBuffersError> { self.frame.finish() }
         pub fn draw_batch(&mut self, wnd: &Window, brush: &Brush, buffers: ShapeBuffer) {
             self.frame
                 .draw(
