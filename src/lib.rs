@@ -38,6 +38,20 @@ pub mod drawy {
         pub const BLUE_AQUA: Color = Color::new(0.0, 1.0, 1.0, 1.0);
     }
 
+    pub trait UserWindowHandler {
+        fn startup(&self) {
+        }
+
+        fn process_logic(&self) {
+        }
+
+        fn process_render(&self, wnd: &Window) {
+        }
+
+        fn cleanup(&self) {
+        }
+    }
+
     pub struct WindowSettings {
         max_fps: u64,
     }
@@ -50,7 +64,7 @@ pub mod drawy {
     }
 
     impl Window {
-        pub fn create_and_run(f: fn(&Window)) {
+        pub fn create_and_run(user: impl UserWindowHandler) {
             let event_loop = glutin::event_loop::EventLoop::new();
             let wb = glutin::window::WindowBuilder::new();
             let cb = glutin::ContextBuilder::new();
@@ -72,7 +86,7 @@ pub mod drawy {
                     return;
                 }
 
-                f(&window);
+                user.process_render(&window);
 
                 //Limit framerate
                 let elapsed_time = Instant::now().duration_since(start_time).as_millis() as u64;
