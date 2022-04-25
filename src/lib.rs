@@ -19,7 +19,9 @@ pub mod drawy {
     }
 
     impl Color {
-        pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self { Self { r, g, b, a } }
+        pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
+            Self { r, g, b, a }
+        }
 
         pub const CLEAR: Color = Color::new(0.0, 0.0, 0.0, 0.0);
         pub const BLACK: Color = Color::new(0.0, 0.0, 0.0, 1.0);
@@ -39,17 +41,13 @@ pub mod drawy {
     }
 
     pub trait UserWindowHandler {
-        fn startup(&self) {
-        }
+        fn startup(&self, _wnd: &Window) {}
 
-        fn process_logic(&self) {
-        }
+        fn process_logic(&self) {}
 
-        fn process_render(&self, wnd: &Window) {
-        }
+        fn process_render(&self, _wnd: &Window) {}
 
-        fn cleanup(&self) {
-        }
+        fn cleanup(&self, _wnd: &Window) {}
     }
 
     pub struct WindowSettings {
@@ -64,7 +62,7 @@ pub mod drawy {
     }
 
     impl Window {
-        pub fn create_and_run(user: impl UserWindowHandler) {
+        pub fn create_and_run(user: impl UserWindowHandler + 'static) {
             let event_loop = glutin::event_loop::EventLoop::new();
             let wb = glutin::window::WindowBuilder::new();
             let cb = glutin::ContextBuilder::new();
@@ -77,12 +75,15 @@ pub mod drawy {
                 frame_count: 0,
             };
 
+            user.startup(&window);
+
             event_loop.run(move |ev, _, flow| {
                 window.frame_count += 1;
                 let start_time = Instant::now();
 
                 if Self::exit_request(&ev) {
                     *flow = glutin::event_loop::ControlFlow::Exit;
+                    user.cleanup(&window);
                     return;
                 }
 
@@ -132,17 +133,23 @@ pub mod drawy {
 
         #[must_use]
         #[inline]
-        pub fn display(&self) -> &Display { &self.display }
+        pub fn display(&self) -> &Display {
+            &self.display
+        }
 
         /// Get the canvas's delta time.
         #[must_use]
         #[inline]
-        pub fn delta_time(&self) -> f64 { self.delta_time }
+        pub fn delta_time(&self) -> f64 {
+            self.delta_time
+        }
 
         /// Get the canvas's frame count.
         #[must_use]
         #[inline]
-        pub fn frame_count(&self) -> u64 { self.frame_count }
+        pub fn frame_count(&self) -> u64 {
+            self.frame_count
+        }
     }
 
     implement_vertex!(Vertex, pos);
@@ -152,7 +159,9 @@ pub mod drawy {
     }
 
     impl Vertex {
-        pub fn from_viewport(x: f32, y: f32) -> Self { Self { pos: [x, y] } }
+        pub fn from_viewport(x: f32, y: f32) -> Self {
+            Self { pos: [x, y] }
+        }
         pub fn from_pixel(canvas: &Canvas, x: u32, y: u32) -> Self {
             let dim = canvas.frame.get_dimensions();
             Self {
@@ -161,10 +170,14 @@ pub mod drawy {
         }
         #[must_use]
         #[inline]
-        pub fn x(&self) -> f32 { self.pos[0] }
+        pub fn x(&self) -> f32 {
+            self.pos[0]
+        }
         #[must_use]
         #[inline]
-        pub fn y(&self) -> f32 { self.pos[1] }
+        pub fn y(&self) -> f32 {
+            self.pos[1]
+        }
     }
 
     #[macro_export]
@@ -282,8 +295,10 @@ pub mod drawy {
         pub fn clear_color(&mut self, color: Color) {
             self.frame.clear_color(color.r, color.g, color.b, color.a);
         }
-        pub fn finish_canvas(self) -> Result<(), glium::SwapBuffersError> { self.frame.finish() }
-        pub fn draw_batch(&mut self, wnd: &Window, brush: &Brush, buffers: ShapeBuffer) {
+        pub fn finish_canvas(self) -> Result<(), glium::SwapBuffersError> {
+            self.frame.finish()
+        }
+        pub fn draw_batch(&mut self, _wnd: &Window, brush: &Brush, buffers: ShapeBuffer) {
             self.frame
                 .draw(
                     &buffers.vertex_buffer,
