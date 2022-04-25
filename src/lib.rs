@@ -8,7 +8,9 @@ pub mod drawy {
             self,
             event::{Event, VirtualKeyCode},
         },
-        implement_vertex, Display, Program, Surface,
+        implement_vertex, texture,
+        uniforms::{self, SamplerBehavior},
+        Display, Program, Surface,
     };
 
     pub struct Color {
@@ -19,9 +21,7 @@ pub mod drawy {
     }
 
     impl Color {
-        pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
-            Self { r, g, b, a }
-        }
+        pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self { Self { r, g, b, a } }
 
         pub const CLEAR: Color = Color::new(0.0, 0.0, 0.0, 0.0);
         pub const BLACK: Color = Color::new(0.0, 0.0, 0.0, 1.0);
@@ -41,13 +41,17 @@ pub mod drawy {
     }
 
     pub trait UserWindowHandler {
-        fn startup(&self, _wnd: &Window) {}
+        fn startup(&mut self, _wnd: &Window) {
+        }
 
-        fn process_logic(&self) {}
+        fn process_logic(&mut self) {
+        }
 
-        fn process_render(&self, _wnd: &Window) {}
+        fn process_render(&mut self, _wnd: &Window) {
+        }
 
-        fn cleanup(&self, _wnd: &Window) {}
+        fn cleanup(&mut self, _wnd: &Window) {
+        }
     }
 
     pub struct WindowSettings {
@@ -62,7 +66,7 @@ pub mod drawy {
     }
 
     impl Window {
-        pub fn create_and_run(user: impl UserWindowHandler + 'static) {
+        pub fn create_and_run(mut user: impl UserWindowHandler + 'static) {
             let event_loop = glutin::event_loop::EventLoop::new();
             let wb = glutin::window::WindowBuilder::new();
             let cb = glutin::ContextBuilder::new();
@@ -133,23 +137,17 @@ pub mod drawy {
 
         #[must_use]
         #[inline]
-        pub fn display(&self) -> &Display {
-            &self.display
-        }
+        pub fn display(&self) -> &Display { &self.display }
 
         /// Get the canvas's delta time.
         #[must_use]
         #[inline]
-        pub fn delta_time(&self) -> f64 {
-            self.delta_time
-        }
+        pub fn delta_time(&self) -> f64 { self.delta_time }
 
         /// Get the canvas's frame count.
         #[must_use]
         #[inline]
-        pub fn frame_count(&self) -> u64 {
-            self.frame_count
-        }
+        pub fn frame_count(&self) -> u64 { self.frame_count }
     }
 
     implement_vertex!(Vertex, pos);
@@ -159,25 +157,16 @@ pub mod drawy {
     }
 
     impl Vertex {
-        pub fn from_viewport(x: f32, y: f32) -> Self {
-            Self { pos: [x, y] }
-        }
-        pub fn from_pixel(canvas: &Canvas, x: u32, y: u32) -> Self {
-            let dim = canvas.frame.get_dimensions();
-            Self {
-                pos: [x as f32 / dim.0 as f32, y as f32 / dim.1 as f32],
-            }
-        }
+        /// Center       [ 0,  0],
+        /// Top Right    [ 1,  1],
+        /// Bottom Left  [-1, -1],
+        pub fn from_viewport(x: f32, y: f32) -> Self { Self { pos: [x, y] } }
         #[must_use]
         #[inline]
-        pub fn x(&self) -> f32 {
-            self.pos[0]
-        }
+        pub fn x(&self) -> f32 { self.pos[0] }
         #[must_use]
         #[inline]
-        pub fn y(&self) -> f32 {
-            self.pos[1]
-        }
+        pub fn y(&self) -> f32 { self.pos[1] }
     }
 
     #[macro_export]
@@ -188,6 +177,71 @@ pub mod drawy {
     }
     pub(crate) use vertex;
 
+    #[derive(Debug)]
+    pub struct TextureSettings {}
+
+    #[derive(Debug)]
+    pub struct Uniform {
+        name: String,
+        value: UniformValue,
+    }
+
+    impl Uniform {
+        pub fn new(name: String, value: UniformValue) -> Self { Self { name, value } }
+        pub fn from_str(name: &str, value: UniformValue) -> Self {
+            Self {
+                name: name.to_string(),
+                value,
+            }
+        }
+    }
+    #[derive(Debug)]
+    pub enum UniformValue {
+        Float(f32),
+        Int(i32),
+        UInt(u32),
+        Vec2([f32; 2]),
+        Vec3([f32; 3]),
+        Vec4([f32; 4]),
+        Matrix2([[f32; 2]; 2]),
+        Matrix3([[f32; 3]; 3]),
+        Matrix4([[f32; 4]; 4]),
+        Texture1D(texture::Texture1d, Option<TextureSettings>),
+        Texture2D(texture::Texture2d, Option<TextureSettings>),
+        Texture3D(texture::Texture3d, Option<TextureSettings>),
+        DepthTexture2D(texture::DepthTexture2d, Option<TextureSettings>),
+    }
+
+    #[derive(Debug)]
+    pub struct UniformBuffer {
+        uniforms: Vec<Uniform>,
+    }
+
+    impl UniformBuffer {
+        pub fn new(uniforms: Vec<Uniform>) -> Self { Self { uniforms } }
+    }
+
+    impl uniforms::Uniforms for UniformBuffer {
+        fn visit_values<'a, F: FnMut(&str, uniforms::UniformValue<'a>)>(&'a self, mut output: F) {
+            for uniform in self.uniforms.iter() {
+                match &uniform.value {
+                    UniformValue::Float(value) => {
+                        output(uniform.name.as_str(), uniforms::UniformValue::Float(*value))
+                    }
+                    UniformValue::Int(value) => output(
+                        uniform.name.as_str(),
+                        uniforms::UniformValue::SignedInt(*value),
+                    ),
+                    UniformValue::Texture2D(value, _) => output(
+                        uniform.name.as_str(),
+                        uniforms::UniformValue::Texture2d(&value, Some(SamplerBehavior::default())),
+                    ),
+                    _ => panic!("{:?} not yet implemented", uniform),
+                }
+            }
+        }
+    }
+
     ///Queue of shapes to be drawn. All shapes added to the same batch will be drawn at the same time using the same brush.
     #[derive(Default)]
     pub struct ShapeBatch {
@@ -196,6 +250,10 @@ pub mod drawy {
     }
 
     impl ShapeBatch {
+        pub fn add_raw(&mut self, vertices: &mut Vec<Vertex>, indices: &mut Vec<u32>) {
+            self.vertices.append(vertices);
+            self.indices.append(indices);
+        }
         ///Add a triangle to the batch specifying its 3 vertices
         pub fn add_triangle(&mut self, v: [Vertex; 3]) {
             let index = self.indices.len() as u32;
@@ -226,15 +284,7 @@ pub mod drawy {
             self.indices.push(index + 1);
             self.indices.push(index + 3);
         }
-    }
 
-    ///Buffers created from the batch and prepared to be sent directly to the GPU
-    pub struct ShapeBuffer {
-        vertex_buffer: glium::VertexBuffer<Vertex>,
-        index_buffer: glium::IndexBuffer<u32>,
-    }
-
-    impl ShapeBatch {
         pub fn bake_buffers(self, wnd: &Window) -> ShapeBuffer {
             let vertex_buffer = glium::VertexBuffer::new(wnd.display(), &self.vertices).unwrap();
             let index_buffer = glium::IndexBuffer::new(
@@ -250,20 +300,31 @@ pub mod drawy {
         }
     }
 
+    ///Buffers created from the batch and prepared to be sent directly to the GPU
+    pub struct ShapeBuffer {
+        vertex_buffer: glium::VertexBuffer<Vertex>,
+        index_buffer: glium::IndexBuffer<u32>,
+    }
+
     ///Used to configurate how to draw shapes in the GPU
     pub struct Brush {
         program: Program,
+        uniform_buffer: UniformBuffer,
     }
 
     impl Brush {
-        pub fn new_basic(wnd: &Window) -> Brush {
+        pub fn new_basic(wnd: &Window) -> Self {
             let program = glium::Program::from_source(
                 &wnd.display,
                 r#"
             #version 330 core
             in vec2 pos;
+
+            uniform float Offset;
+
             void main() {
-                gl_Position = vec4(pos, 0.0, 1.0);
+                float y_pos = pos.y + Offset;
+                gl_Position = vec4(pos.x, y_pos, 0.0, 1.0);
             }
             "#,
                 r#"
@@ -276,15 +337,36 @@ pub mod drawy {
                 None,
             )
             .unwrap();
-            Self { program }
+            Self {
+                program,
+                uniform_buffer: UniformBuffer::new(Vec::new()),
+            }
         }
         pub fn from_source<'a>(
             wnd: &Window, vertex: &'a str, fragment: &'a str, geometry: Option<&'a str>,
-        ) -> Brush {
+        ) -> Self {
             let program =
                 glium::Program::from_source(&wnd.display, vertex, fragment, geometry).unwrap();
-            Self { program }
+            Self {
+                program,
+                uniform_buffer: UniformBuffer::new(Vec::new()),
+            }
         }
+        pub fn add_uniform(mut self, uniform: Uniform) -> Self {
+            self.uniform_buffer.uniforms.push(uniform);
+            self
+        }
+        pub fn change_uniform(&mut self, uniform: Uniform) -> &Self {
+            let pos = self
+                .uniform_buffer
+                .uniforms
+                .iter()
+                .position(|x| x.name == uniform.name)
+                .unwrap();
+            self.uniform_buffer.uniforms[pos].value = uniform.value;
+            self
+        }
+        pub fn clear_uniforms(&mut self) { self.uniform_buffer.uniforms.clear(); }
     }
 
     pub struct Canvas {
@@ -295,16 +377,14 @@ pub mod drawy {
         pub fn clear_color(&mut self, color: Color) {
             self.frame.clear_color(color.r, color.g, color.b, color.a);
         }
-        pub fn finish_canvas(self) -> Result<(), glium::SwapBuffersError> {
-            self.frame.finish()
-        }
+        pub fn finish_canvas(self) -> Result<(), glium::SwapBuffersError> { self.frame.finish() }
         pub fn draw_batch(&mut self, _wnd: &Window, brush: &Brush, buffers: ShapeBuffer) {
             self.frame
                 .draw(
                     &buffers.vertex_buffer,
                     &buffers.index_buffer,
                     &brush.program,
-                    &glium::uniforms::EmptyUniforms, //TODO: Implement uniforms in ShapeBuffer
+                    &brush.uniform_buffer,
                     &Default::default(),
                 )
                 .unwrap();
