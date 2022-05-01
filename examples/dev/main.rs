@@ -2,6 +2,7 @@ use std::path::Path;
 
 use ldrawy::{
     self, vertex, Brush, Color, ShapeBatch, Texture2D, Uniform, UserWindowHandler, Window,
+    WindowSettings,
 };
 
 struct MainWindow {
@@ -20,8 +21,15 @@ impl MainWindow {
 impl UserWindowHandler for MainWindow {
     fn startup(&mut self, wnd: &Window) {
         //Create a brush and add a uniform main texture
-        let mut brush = Brush::new_basic(wnd);
+        let mut brush = Brush::from_path(
+            wnd,
+            Path::new("examples/shared_assets/basic.vert"),
+            Path::new("examples/shared_assets/basic.frag"),
+            None,
+        );
+
         let texture = Texture2D::new(wnd, Path::new("examples/dev/assets/wood.png"));
+
         brush.add_uniform(Uniform::new(
             String::from("main_tex"),
             ldrawy::UniformValue::Texture2D(texture.texture, None),
@@ -52,4 +60,4 @@ impl UserWindowHandler for MainWindow {
     }
 }
 
-fn main() { Window::create_and_run(MainWindow { brush: None }); }
+fn main() { Window::create_and_run(WindowSettings::new(60), MainWindow { brush: None }); }

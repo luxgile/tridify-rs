@@ -1,5 +1,15 @@
 use glium::vertex::Attribute;
 
+/// RGBA representation of colors. Each value goes from 0 to 1.
+///
+/// You can use the constants for some default values.
+///
+/// #Examples
+/// ``` rust
+/// use ldrawy::Color;
+/// let white_color = Color::WHITE;
+/// let white_color = Color::new(1.0, 1.0, 1.0, 1.0);
+/// ```
 #[derive(Clone, Copy)]
 pub struct Color {
     pub r: f32,

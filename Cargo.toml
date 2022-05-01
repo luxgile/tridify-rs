@@ -1,10 +1,15 @@
 [package]
 name = "ldrawy"
+description = "Fast render OpenGL API that aims to simplify rendering pipelines. Currently under heavy development."
 version = "0.1.0"
 edition = "2021"
-include = ["/render"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/luxgile/LDrawy"
+readme = "readme.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+keywords = ["graphics", "render", "OpenGL", "GPU", "drawy", "API"]
+categories = ["multimedia", "rendering", "rendering::engine"]
+
 
 [dependencies]
 glium = "*"

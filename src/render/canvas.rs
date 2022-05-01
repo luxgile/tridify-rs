@@ -4,6 +4,7 @@ use crate::core::{Color, Window};
 
 use super::{Brush, ShapeBuffer};
 
+/// Manages the current frame being drawn.
 pub struct Canvas {
     frame: glium::Frame,
 }

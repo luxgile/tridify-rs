@@ -13,6 +13,8 @@ use crate::render::Canvas;
 
 use super::Color;
 
+/// Manages window lifetime events from the user side.
+/// Needs to be implemented in user defined struct and sent to LDrawy to start drawing a window.
 pub trait UserWindowHandler {
     fn startup(&mut self, _wnd: &Window) {
     }
@@ -27,10 +29,17 @@ pub trait UserWindowHandler {
     }
 }
 
+///Basic settings to create a window.
 pub struct WindowSettings {
     max_fps: u64,
 }
 
+impl WindowSettings {
+    pub fn new(max_fps: u64) -> Self { Self { max_fps } }
+}
+
+/// Internal representation of a window with direct access to OpenGL context. Needs to be used in most drawing and GPU
+/// related functions.
 pub struct Window {
     settings: WindowSettings,
     display: Display,
@@ -39,14 +48,15 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn create_and_run(mut user: impl UserWindowHandler + 'static) {
+    /// Create and start the window run loop, using the settings and user handler provided.
+    pub fn create_and_run(settings: WindowSettings, mut user: impl UserWindowHandler + 'static) {
         let event_loop = glutin::event_loop::EventLoop::new();
         let wb = glutin::window::WindowBuilder::new();
         let cb = glutin::ContextBuilder::new();
         let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
         let mut window = Window {
-            settings: WindowSettings { max_fps: 60 },
+            settings,
             display,
             delta_time: 0.0,
             frame_count: 0,
@@ -114,6 +124,7 @@ impl Window {
         }
     }
 
+    /// Get the canvas's display.
     #[must_use]
     #[inline]
     pub fn display(&self) -> &Display { &self.display }

@@ -1,60 +1,44 @@
+use std::path::Path;
+
 use glium::Program;
 
 use crate::core::Window;
 
 use super::{Uniform, UniformBuffer};
 
-///Used to configurate how to draw shapes in the GPU
+///Used to tell the GPU how to draw the shapes provided.
 pub struct Brush {
     program: Program,
     uniform_buffer: UniformBuffer,
 }
 
 impl Brush {
-    pub fn new_basic(wnd: &Window) -> Self {
-        let program = glium::Program::from_source(
-            wnd.display(),
-            r#"
-            #version 330 core
-            in vec3 pos;
-            in vec4 color;
-            in vec2 uv;
-
-            out vec4 frag_color;
-            out vec2 frag_uv;
-
-            void main() {
-                frag_uv = uv;
-                frag_color = color;
-                gl_Position = vec4(pos, 1.0);
-            }
-            "#,
-            r#"
-            #version 330 core
-            in vec4 frag_color;
-            in vec2 frag_uv;
-
-            uniform sampler2D main_tex;
-
-            out vec4 out_color;
-
-            void main() {
-                out_color = vec4(frag_color) + texture(main_tex, frag_uv);
-            }
-            "#,
-            None,
+    pub fn from_path(
+        wnd: &Window, vertex: &Path, fragment: &Path, geometry: Option<&Path>,
+    ) -> Self {
+        let geometry_source = if let Some(path) = geometry {
+            let source = std::fs::read_to_string(path);
+            Some(source.unwrap())
+        } else {
+            None
+        };
+        Self::from_source(
+            wnd,
+            std::fs::read_to_string(vertex).unwrap(),
+            std::fs::read_to_string(fragment).unwrap(),
+            geometry_source,
         )
-        .unwrap();
-        Self {
-            program,
-            uniform_buffer: UniformBuffer::new(Vec::new()),
-        }
     }
     pub fn from_source<'a>(
-        wnd: &Window, vertex: &'a str, fragment: &'a str, geometry: Option<&'a str>,
+        wnd: &Window, vertex: String, fragment: String, geometry: Option<String>,
     ) -> Self {
-        let program =
-            glium::Program::from_source(wnd.display(), vertex, fragment, geometry).unwrap();
+        let program = glium::Program::from_source(
+            wnd.display(),
+            vertex.as_str(),
+            fragment.as_str(),
+            geometry.as_deref(),
+        )
+        .unwrap();
         Self {
             program,
             uniform_buffer: UniformBuffer::new(Vec::new()),

@@ -50,7 +50,6 @@ pub struct UniformBuffer {
 impl UniformBuffer {
     pub fn new(uniforms: Vec<Uniform>) -> Self { Self { uniforms } }
 
-    #[must_use]
     pub fn add_uniform(&mut self, uniform: Uniform) { self.uniforms.push(uniform); }
 
     /// Get a reference to the uniform buffer's uniforms.
