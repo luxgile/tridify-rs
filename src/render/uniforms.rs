@@ -1,4 +1,7 @@
+use glam::{Mat3, Mat4};
 use glium::uniforms::{self, SamplerBehavior};
+
+use crate::LErr;
 
 use super::TextureSettings;
 
@@ -25,6 +28,11 @@ impl Uniform {
     #[must_use]
     pub fn value(&self) -> &UniformValue { &self.value }
 }
+
+impl PartialEq for Uniform {
+    fn eq(&self, other: &Self) -> bool { self.name == other.name }
+}
+
 #[derive(Debug)]
 pub enum UniformValue {
     Float(f32),
@@ -34,7 +42,7 @@ pub enum UniformValue {
     Vec3([f32; 3]),
     Vec4([f32; 4]),
     Matrix2([[f32; 2]; 2]),
-    Matrix3([[f32; 3]; 3]),
+    Matrix3(Mat3),
     Matrix4([[f32; 4]; 4]),
     Texture1D(glium::texture::SrgbTexture2d, Option<TextureSettings>),
     Texture2D(glium::texture::SrgbTexture2d, Option<TextureSettings>),
@@ -50,18 +58,34 @@ pub struct UniformBuffer {
 impl UniformBuffer {
     pub fn new(uniforms: Vec<Uniform>) -> Self { Self { uniforms } }
 
-    pub fn add_uniform(&mut self, uniform: Uniform) { self.uniforms.push(uniform); }
+    pub fn add_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
+        if self.has_uniform(&uniform) {
+            return Err(LErr::new(format!(
+                "Cannot add uniform '{}' as it's already in the buffer",
+                uniform.name
+            )));
+        }
+        self.uniforms.push(uniform);
+        Ok(())
+    }
+    pub fn has_uniform(&self, uniform: &Uniform) -> bool { self.uniforms.contains(uniform) }
 
     /// Get a reference to the uniform buffer's uniforms.
     #[must_use]
     pub fn uniforms(&self) -> &[Uniform] { self.uniforms.as_ref() }
-    pub fn change_uniform(&mut self, uniform: Uniform) {
+    pub fn change_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
         let pos = self
             .uniforms()
             .iter()
-            .position(|x| x.name() == uniform.name())
-            .unwrap();
-        self.uniforms[pos].value = uniform.value;
+            .position(|x| x.name() == uniform.name());
+        if let None = pos {
+            return Result::Err(LErr::new(format!(
+                "No uniform named '{}' was found",
+                uniform.name
+            )));
+        }
+        self.uniforms[pos.unwrap()].value = uniform.value;
+        return Result::Ok(());
     }
     pub fn clear(&mut self) { self.uniforms.clear() }
 }
@@ -83,6 +107,9 @@ impl uniforms::Uniforms for UniformBuffer {
                 ),
                 UniformValue::Vec3(value) => {
                     output(uniform.name.as_str(), uniforms::UniformValue::Vec3(*value))
+                }
+                UniformValue::Matrix4(value) => {
+                    output(uniform.name.as_str(), uniforms::UniformValue::Mat4(*value))
                 }
                 _ => panic!("{:?} not yet implemented", uniform),
             }

@@ -9,21 +9,19 @@ use glium::{
     Display,
 };
 
-use crate::render::Canvas;
+use crate::{render::Canvas, LErr};
 
 use super::Color;
 
 /// Manages window lifetime events from the user side.
 /// Needs to be implemented in user defined struct and sent to LDrawy to start drawing a window.
 pub trait UserWindowHandler {
-    fn startup(&mut self, _wnd: &Window) {
-    }
+    fn startup(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
 
     fn process_logic(&mut self) {
     }
 
-    fn process_render(&mut self, _wnd: &Window) {
-    }
+    fn process_render(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
 
     fn cleanup(&mut self, _wnd: &Window) {
     }
@@ -49,7 +47,9 @@ pub struct Window {
 
 impl Window {
     /// Create and start the window run loop, using the settings and user handler provided.
-    pub fn create_and_run(settings: WindowSettings, mut user: impl UserWindowHandler + 'static) {
+    pub fn create_and_run(
+        settings: WindowSettings, mut user: impl UserWindowHandler + 'static,
+    ) -> Result<(), LErr> {
         let event_loop = glutin::event_loop::EventLoop::new();
         let wb = glutin::window::WindowBuilder::new();
         let cb = glutin::ContextBuilder::new();
@@ -62,7 +62,10 @@ impl Window {
             frame_count: 0,
         };
 
-        user.startup(&window);
+        let result = user.startup(&window);
+        if let Err(e) = result {
+            print!("{:?}\n", e);
+        }
 
         event_loop.run(move |ev, _, flow| {
             let start_time = Instant::now();
@@ -75,7 +78,10 @@ impl Window {
             }
 
             window.frame_count += 1;
-            user.process_render(&window);
+            let result = user.process_render(&window);
+            if let Err(e) = result {
+                println!("{:?}", e);
+            }
 
             //Limit framerate
             let elapsed_time = Instant::now().duration_since(start_time).as_millis() as u64;

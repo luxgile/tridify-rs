@@ -1,4 +1,5 @@
-use crate::{vertex, Vertex, Window};
+use crate::core::*;
+use crate::{vertex, Color, Vec3, Vertex, Window};
 
 ///Queue of shapes to be drawn. All shapes added to the same batch will be drawn at the same time using the same brush.
 #[derive(Default)]
@@ -10,7 +11,7 @@ pub struct ShapeBatch {
 
 impl ShapeBatch {
     ///Add a triangle to the batch specifying its 3 vertices
-    pub fn add_triangle(&mut self, v: [Vertex; 3]) {
+    pub fn add_triangle(&mut self, v: [Vertex; 3]) -> &mut Self {
         let index = self.index_count;
         self.vertices.push(v[0]);
         self.indices.push(index);
@@ -19,21 +20,22 @@ impl ShapeBatch {
         self.vertices.push(v[2]);
         self.indices.push(index + 2);
         self.index_count += 3;
+        self
     }
 
     ///Add a square to the batch specifying the center, width and height
-    pub fn add_square(&mut self, c: Vertex, w: f32, h: f32) {
+    pub fn add_2d_square(&mut self, center: Vec3, w: f32, h: f32, color: Color) {
         //Adding vertices
         let hw = w / 2.0;
         let hh = h / 2.0;
         self.vertices
-            .push(vertex!(c.x() - hw, c.y() - hh, c.color(), [0.0, 0.0]));
+            .push(vertex!(center.x - hw, center.y - hh, 0., color, [0.0, 0.0]));
         self.vertices
-            .push(vertex!(c.x() + hw, c.y() - hh, c.color(), [1.0, 0.0]));
+            .push(vertex!(center.x + hw, center.y - hh, 0., color, [1.0, 0.0]));
         self.vertices
-            .push(vertex!(c.x() - hw, c.y() + hh, c.color(), [0.0, 1.0]));
+            .push(vertex!(center.x - hw, center.y + hh, 0., color, [0.0, 1.0]));
         self.vertices
-            .push(vertex!(c.x() + hw, c.y() + hh, c.color(), [1.0, 1.0]));
+            .push(vertex!(center.x + hw, center.y + hh, 0., color, [1.0, 1.0]));
 
         //Adding indices
         let index = self.index_count;
@@ -45,6 +47,62 @@ impl ShapeBatch {
         self.indices.push(index + 3);
 
         self.index_count += 4;
+    }
+
+    pub fn add_square(
+        &mut self, center: Vec3, up: Vec3, normal: Vec3, w: f32, h: f32, color: Color,
+    ) {
+        //Adding vertices
+        let right = up.cross(normal).normalize();
+        let hw = w / 2.0;
+        let hh = h / 2.0;
+
+        self.vertices.push(Vertex::from_vec(
+            center - right * hw - up * hh,
+            Some(color),
+            Some([0.0, 0.0]),
+        ));
+        self.vertices.push(Vertex::from_vec(
+            center + right * hw - up * hh,
+            Some(color),
+            Some([1.0, 0.0]),
+        ));
+        self.vertices.push(Vertex::from_vec(
+            center - right * hw + up * hh,
+            Some(color),
+            Some([0.0, 1.0]),
+        ));
+        self.vertices.push(Vertex::from_vec(
+            center + right * hw + up * hh,
+            Some(color),
+            Some([1.0, 1.0]),
+        ));
+
+        //Adding indices
+        let index = self.index_count;
+        self.indices.push(index);
+        self.indices.push(index + 1);
+        self.indices.push(index + 2);
+        self.indices.push(index + 2);
+        self.indices.push(index + 1);
+        self.indices.push(index + 3);
+
+        self.index_count += 4;
+    }
+
+    pub fn add_cube(&mut self, center: Vec3, orientation: Quat, scale: Vec3, color: Color) {
+        let hw = scale.x / 2.0;
+        let hh = scale.y / 2.0;
+        let hd = scale.z / 2.0;
+        let right = orientation * Vec3::X;
+        let up = orientation * Vec3::Y;
+        let forw = orientation * Vec3::Z;
+        self.add_square(center + right * hw, up, right, scale.y, scale.z, color);
+        self.add_square(center - right * hw, up, -right, scale.y, scale.z, color);
+        self.add_square(center + up * hh, forw, up, scale.x, scale.z, color);
+        self.add_square(center - up * hh, forw, -up, scale.x, scale.z, color);
+        self.add_square(center + forw * hd, up, forw, scale.x, scale.y, color);
+        self.add_square(center - forw * hd, up, -forw, scale.x, scale.y, color);
     }
 
     pub fn bake_buffers(&self, wnd: &Window) -> ShapeBuffer {
@@ -60,6 +118,14 @@ impl ShapeBatch {
             index_buffer,
         }
     }
+
+    /// Get a reference to the shape batch's vertices.
+    #[must_use]
+    pub fn vertices(&self) -> &[Vertex] { self.vertices.as_ref() }
+
+    /// Get a mutable reference to the shape batch's vertices.
+    #[must_use]
+    pub fn vertices_mut(&mut self) -> &mut Vec<Vertex> { &mut self.vertices }
 }
 
 ///Buffers created from the batch and prepared to be sent directly to the GPU

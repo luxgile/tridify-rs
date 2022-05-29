@@ -1,3 +1,4 @@
+use glam::Vec3;
 use glium::implement_vertex;
 
 use crate::core::Color;
@@ -5,18 +6,22 @@ use crate::core::Color;
 implement_vertex!(Vertex, pos, color, uv);
 #[derive(Copy, Clone)]
 pub struct Vertex {
-    pos: [f32; 3],
-    color: Color,
-    uv: [f32; 2],
+    pub pos: [f32; 3],
+    pub color: Color,
+    pub uv: [f32; 2],
 }
 
 impl Vertex {
-    /// Center       [ 0,  0],
-    /// Top Right    [ 1,  1],
-    /// Bottom Left  [-1, -1],
-    pub fn from_viewport(x: f32, y: f32, c: Option<Color>, uv: Option<[f32; 2]>) -> Self {
+    pub fn new(x: f32, y: f32, z: f32, c: Option<Color>, uv: Option<[f32; 2]>) -> Self {
         Self {
-            pos: [x, y, 0.0],
+            pos: [x, y, z],
+            color: c.unwrap_or(Color::WHITE),
+            uv: uv.unwrap_or([0.0, 0.0]),
+        }
+    }
+    pub fn from_vec(v: Vec3, c: Option<Color>, uv: Option<[f32; 2]>) -> Self {
+        Self {
+            pos: [v.x, v.y, v.z],
             color: c.unwrap_or(Color::WHITE),
             uv: uv.unwrap_or([0.0, 0.0]),
         }
@@ -27,21 +32,17 @@ impl Vertex {
     #[must_use]
     #[inline]
     pub fn y(&self) -> f32 { self.pos[1] }
-
-    /// Get the vertex's color.
-    #[must_use]
-    pub fn color(&self) -> Color { self.color }
 }
 
 #[macro_export]
 macro_rules! vertex {
-    ($a:expr, $b:expr) => {
-        crate::Vertex::from_viewport($a, $b, None, None)
-    };
     ($a:expr, $b:expr, $c:expr) => {
-        ldrawy::Vertex::from_viewport($a, $b, Some($c), None)
+        crate::Vertex::new($a, $b, $c, None, None)
     };
-    ($a:expr, $b:expr, $c:expr, $uv:expr) => {
-        crate::Vertex::from_viewport($a, $b, Some($c), Some($uv))
+    ($a:expr, $b:expr, $c:expr, $col:expr) => {
+        crate::Vertex::new($a, $b, $c, Some($col), None)
+    };
+    ($a:expr, $b:expr, $c:expr, $col:expr, $uv:expr) => {
+        crate::Vertex::new($a, $b, $c, Some($col), Some($uv))
     };
 }

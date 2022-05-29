@@ -2,7 +2,7 @@ use std::path::Path;
 
 use glium::Program;
 
-use crate::core::Window;
+use crate::{core::Window, LErr};
 
 use super::{Uniform, UniformBuffer};
 
@@ -15,19 +15,19 @@ pub struct Brush {
 impl Brush {
     pub fn from_path(
         wnd: &Window, vertex: &Path, fragment: &Path, geometry: Option<&Path>,
-    ) -> Self {
+    ) -> Result<Self, LErr> {
         let geometry_source = if let Some(path) = geometry {
             let source = std::fs::read_to_string(path);
             Some(source.unwrap())
         } else {
             None
         };
-        Self::from_source(
+        Ok(Self::from_source(
             wnd,
-            std::fs::read_to_string(vertex).unwrap(),
-            std::fs::read_to_string(fragment).unwrap(),
+            std::fs::read_to_string(vertex.canonicalize()?)?,
+            std::fs::read_to_string(fragment.canonicalize()?)?,
             geometry_source,
-        )
+        ))
     }
     pub fn from_source<'a>(
         wnd: &Window, vertex: String, fragment: String, geometry: Option<String>,
@@ -44,13 +44,18 @@ impl Brush {
             uniform_buffer: UniformBuffer::new(Vec::new()),
         }
     }
-    pub fn add_uniform(&mut self, uniform: Uniform) -> &Self {
-        self.uniform_buffer.add_uniform(uniform);
-        self
+    pub fn add_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
+        self.uniform_buffer.add_uniform(uniform)
     }
-    pub fn change_uniform(&mut self, uniform: Uniform) -> &Self {
-        self.uniform_buffer.change_uniform(uniform);
-        self
+    pub fn update_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
+        if self.uniform_buffer.has_uniform(&uniform) {
+            return self.uniform_buffer.change_uniform(uniform);
+        } else {
+            return self.uniform_buffer.add_uniform(uniform);
+        }
+    }
+    pub fn change_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
+        self.uniform_buffer.change_uniform(uniform)
     }
     pub fn clear_uniforms(&mut self) { self.uniform_buffer.clear(); }
 

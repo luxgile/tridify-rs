@@ -14,12 +14,14 @@ pub struct Texture2D {
 impl Texture2D {
     pub fn new(wnd: &Window, path: &Path) -> Texture2D {
         use std::io::Cursor;
-        let image = image::load(
-            Cursor::new(std::fs::read(path).unwrap()),
-            image::ImageFormat::Png,
-        )
-        .unwrap()
-        .to_rgba8();
+        let format = match path.extension().unwrap().to_str().unwrap() {
+            "png" => image::ImageFormat::Png,
+            "jpg" => image::ImageFormat::Jpeg,
+            _ => panic!("Unsupported texture format"),
+        };
+        let image = image::load(Cursor::new(std::fs::read(path).unwrap()), format)
+            .unwrap()
+            .to_rgba8();
 
         let image_dimensions = image.dimensions();
         let image =

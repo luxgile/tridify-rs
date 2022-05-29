@@ -12,5 +12,6 @@ categories = ["multimedia", "rendering", "rendering::engine"]
 
 
 [dependencies]
-glium = "*"
-image = "*"
+glium = "0.31.0"
+image = "0.24.2"
+glam = "0.20.5"
