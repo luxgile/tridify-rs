@@ -1,4 +1,4 @@
-use glam::{Mat3, Mat4};
+use glam::Mat3;
 use glium::uniforms::{self, SamplerBehavior};
 
 use crate::LErr;
@@ -42,11 +42,11 @@ pub enum UniformValue {
     Vec3([f32; 3]),
     Vec4([f32; 4]),
     Matrix2([[f32; 2]; 2]),
-    Matrix3(Mat3),
+    Matrix3([[f32; 3]; 3]),
     Matrix4([[f32; 4]; 4]),
-    Texture1D(glium::texture::SrgbTexture2d, Option<TextureSettings>),
+    Texture1D(glium::texture::SrgbTexture1d, Option<TextureSettings>),
     Texture2D(glium::texture::SrgbTexture2d, Option<TextureSettings>),
-    Texture3D(glium::texture::SrgbTexture2d, Option<TextureSettings>),
+    Texture3D(glium::texture::SrgbTexture3d, Option<TextureSettings>),
     DepthTexture2D(glium::texture::DepthTexture2d, Option<TextureSettings>),
 }
 
@@ -58,6 +58,7 @@ pub struct UniformBuffer {
 impl UniformBuffer {
     pub fn new(uniforms: Vec<Uniform>) -> Self { Self { uniforms } }
 
+    ///Add uniform to the buffer, if uniform already exists, returns error.
     pub fn add_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
         if self.has_uniform(&uniform) {
             return Err(LErr::new(format!(
@@ -73,6 +74,8 @@ impl UniformBuffer {
     /// Get a reference to the uniform buffer's uniforms.
     #[must_use]
     pub fn uniforms(&self) -> &[Uniform] { self.uniforms.as_ref() }
+
+    /// Changes a uniform, returns error if the uniform does not exist.
     pub fn change_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
         let pos = self
             .uniforms()
@@ -87,6 +90,7 @@ impl UniformBuffer {
         self.uniforms[pos.unwrap()].value = uniform.value;
         return Result::Ok(());
     }
+    ///Clears all uniforms.
     pub fn clear(&mut self) { self.uniforms.clear() }
 }
 
@@ -101,16 +105,47 @@ impl uniforms::Uniforms for UniformBuffer {
                     uniform.name.as_str(),
                     uniforms::UniformValue::SignedInt(*value),
                 ),
-                UniformValue::Texture2D(value, _) => output(
+                UniformValue::UInt(value) => output(
                     uniform.name.as_str(),
-                    uniforms::UniformValue::SrgbTexture2d(&value, Some(SamplerBehavior::default())),
+                    uniforms::UniformValue::UnsignedInt(*value),
                 ),
+                UniformValue::Vec2(value) => {
+                    output(uniform.name.as_str(), uniforms::UniformValue::Vec2(*value))
+                }
                 UniformValue::Vec3(value) => {
                     output(uniform.name.as_str(), uniforms::UniformValue::Vec3(*value))
+                }
+                UniformValue::Vec4(value) => {
+                    output(uniform.name.as_str(), uniforms::UniformValue::Vec4(*value))
+                }
+                UniformValue::Matrix2(value) => {
+                    output(uniform.name.as_str(), uniforms::UniformValue::Mat2(*value))
+                }
+                UniformValue::Matrix3(value) => {
+                    output(uniform.name.as_str(), uniforms::UniformValue::Mat3(*value))
                 }
                 UniformValue::Matrix4(value) => {
                     output(uniform.name.as_str(), uniforms::UniformValue::Mat4(*value))
                 }
+                UniformValue::Texture1D(value, _) => output(
+                    uniform.name.as_str(),
+                    uniforms::UniformValue::SrgbTexture1d(value, Some(SamplerBehavior::default())),
+                ),
+                UniformValue::Texture2D(value, _) => output(
+                    uniform.name.as_str(),
+                    uniforms::UniformValue::SrgbTexture2d(&value, Some(SamplerBehavior::default())),
+                ),
+                UniformValue::Texture3D(value, _) => output(
+                    uniform.name.as_str(),
+                    uniforms::UniformValue::SrgbTexture3d(&value, Some(SamplerBehavior::default())),
+                ),
+                UniformValue::DepthTexture2D(value, _) => output(
+                    uniform.name.as_str(),
+                    uniforms::UniformValue::DepthTexture2d(
+                        &value,
+                        Some(SamplerBehavior::default()),
+                    ),
+                ),
                 _ => panic!("{:?} not yet implemented", uniform),
             }
         }

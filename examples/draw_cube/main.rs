@@ -55,7 +55,7 @@ impl UserWindowHandler for MainWindow {
         let mut canvas = wnd.start_frame(Color::BLUE_TEAL);
 
         let mut batch = ShapeBatch::default();
-        let mut brush = self.brush.as_mut().unwrap();
+        let brush = self.brush.as_mut().unwrap();
 
         //Adding a cube to the batch
         batch.add_cube(

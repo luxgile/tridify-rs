@@ -49,6 +49,7 @@ impl ShapeBatch {
         self.index_count += 4;
     }
 
+    ///Add a square to the batch specifying the center, width, height and color.
     pub fn add_square(
         &mut self, center: Vec3, up: Vec3, normal: Vec3, w: f32, h: f32, color: Color,
     ) {
@@ -90,6 +91,7 @@ impl ShapeBatch {
         self.index_count += 4;
     }
 
+    ///Add a cube to the batch specifying the center, orientation, size and color.
     pub fn add_cube(&mut self, center: Vec3, orientation: Quat, scale: Vec3, color: Color) {
         let hw = scale.x / 2.0;
         let hh = scale.y / 2.0;
@@ -105,6 +107,7 @@ impl ShapeBatch {
         self.add_square(center - forw * hd, up, -forw, scale.x, scale.y, color);
     }
 
+    ///Create buffers based on current batch data.
     pub fn bake_buffers(&self, wnd: &Window) -> ShapeBuffer {
         let vertex_buffer = glium::VertexBuffer::new(wnd.display(), &self.vertices).unwrap();
         let index_buffer = glium::IndexBuffer::new(

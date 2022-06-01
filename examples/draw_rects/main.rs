@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use ldrawy::{
-    self, vertex, Brush, Color, DrawParams, LErr, ShapeBatch, Texture2D, Uniform,
-    UserWindowHandler, Vec3, Window, WindowSettings,
+    self, Brush, Color, DrawParams, LErr, ShapeBatch, Texture2D, Uniform, UserWindowHandler, Vec3,
+    Window, WindowSettings,
 };
 
 struct MainWindow {
@@ -67,4 +67,6 @@ impl UserWindowHandler for MainWindow {
     }
 }
 
-fn main() { Window::create_and_run(WindowSettings::new(60), MainWindow { brush: None }); }
+fn main() -> Result<(), LErr> {
+    Window::create_and_run(WindowSettings::new(60), MainWindow { brush: None })
+}

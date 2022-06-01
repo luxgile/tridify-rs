@@ -44,9 +44,11 @@ impl Brush {
             uniform_buffer: UniformBuffer::new(Vec::new()),
         }
     }
+    ///Adds a uniform to the brush. Returns error if the uniform already exists.
     pub fn add_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
         self.uniform_buffer.add_uniform(uniform)
     }
+    ///Changes or adds a uniform to the brush.
     pub fn update_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
         if self.uniform_buffer.has_uniform(&uniform) {
             return self.uniform_buffer.change_uniform(uniform);
@@ -54,9 +56,11 @@ impl Brush {
             return self.uniform_buffer.add_uniform(uniform);
         }
     }
+    ///Changes or adds a uniform to the brush. Returns error if the uniform does not exist.
     pub fn change_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {
         self.uniform_buffer.change_uniform(uniform)
     }
+    ///Removes all uniforms from the brush.
     pub fn clear_uniforms(&mut self) { self.uniform_buffer.clear(); }
 
     /// Get a reference to the brush's program.
