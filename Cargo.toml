@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/luxgile/LDrawy"
 readme = "readme.md"
 
-keywords = ["graphics", "render", "OpenGL", "GPU", "drawy", "API"]
+keywords = ["graphics", "render", "OpenGL", "GPU", "API"]
 categories = ["multimedia", "rendering", "rendering::engine"]
 
 
