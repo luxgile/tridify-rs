@@ -1,7 +1,5 @@
 use std::path::Path;
 
-use ldrawy::UserWindowHandler;
-
 use ldrawy::*;
 
 //Start up window.

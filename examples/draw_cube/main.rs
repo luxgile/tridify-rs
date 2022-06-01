@@ -1,27 +1,23 @@
 use std::path::Path;
 
 use glium::{BackfaceCullingMode, Depth};
-use ldrawy::{
-    self, Brush, Color, DrawParams, LErr, Mat4, Quat, ShapeBatch, Texture2D, Uniform, UniformValue,
-    UserWindowHandler, Vec3, Window, WindowSettings,
-};
+use ldrawy::*;
 
+fn main() -> Result<(), LErr> {
+    Window::create_and_run(WindowSettings::new(60), MainWindow::default())
+}
+
+// User defined window with data neccesary between frames.
+// In this case we cache the brush, batch, camera matrices and cube rotation.
+#[derive(Default)]
 struct MainWindow {
     brush: Option<Brush>,
+    batch: Option<ShapeBatch>,
     camera: Mat4,
     projection: Mat4,
-    rotation: f64,
+    rotation: f32,
 }
-impl MainWindow {
-    fn debug_framerate(&self, wnd: &Window) {
-        println!(
-            "Frame:{} - Delta:{:.4}s ({:.2} ms)",
-            wnd.frame_count(),
-            wnd.delta_time(),
-            wnd.delta_time() * 1000.0
-        );
-    }
-}
+
 impl UserWindowHandler for MainWindow {
     fn startup(&mut self, wnd: &Window) -> Result<(), LErr> {
         //Create a brush and add a uniform main texture
@@ -41,35 +37,37 @@ impl UserWindowHandler for MainWindow {
             ))
             .expect("Failed to add uniform");
 
-        self.projection = Mat4::perspective_lh(f32::to_radians(90.), 16.0 / 9.0, 0.5, 100.);
-        self.camera = Mat4::look_at_lh(Vec3::Z * 10.0, Vec3::ZERO, Vec3::Y);
+        self.brush = Some(brush);
 
-        self.brush = Option::Some(brush);
-        Ok(())
-    }
-    fn cleanup(&mut self, _wnd: &Window) { println!("Cleaned process") }
-    fn process_render(&mut self, wnd: &Window) -> Result<(), LErr> {
-        self.debug_framerate(wnd);
-
-        //Start frame
-        let mut canvas = wnd.start_frame(Color::BLUE_TEAL);
-
+        //Creating a batch and adding a cube to it.
         let mut batch = ShapeBatch::default();
-        let brush = self.brush.as_mut().unwrap();
-
-        //Adding a cube to the batch
         batch.add_cube(
             Vec3::ZERO,
-            Quat::from_rotation_y(self.rotation as f32),
+            Quat::from_rotation_x(35.) * Quat::from_rotation_y(35.),
             Vec3::ONE * 5.,
             Color::WHITE,
         );
+        self.batch = Some(batch);
 
-        self.rotation += wnd.delta_time();
+        //Add camera matrices to our window.
+        self.projection = Mat4::perspective_lh(f32::to_radians(90.), 16.0 / 9.0, 0.5, 100.);
+        self.camera = Mat4::look_at_lh(Vec3::Z * 10.0, Vec3::ZERO, Vec3::Y);
 
-        let mvp = self.projection * self.camera;
+        Ok(())
+    }
+
+    fn process_render(&mut self, wnd: &Window) -> Result<(), LErr> {
+        //Start frame
+        let mut canvas = wnd.start_frame(Color::BLUE_TEAL);
+
+        //Update rotation and calculate camera mvp.
+        //TODO: Cache mvp calculation in startup or add camera movement to the example.
+        self.rotation += wnd.delta_time() as f32;
+        let model = Mat4::from_rotation_y(self.rotation);
+        let mvp = self.projection * self.camera * model;
 
         //Update the camera transforms in the shader
+        let brush = self.brush.as_mut().unwrap();
         brush
             .update_uniform(Uniform::new(
                 String::from("mvp"),
@@ -77,7 +75,7 @@ impl UserWindowHandler for MainWindow {
             ))
             .expect("Failed to change uniform");
 
-        //Draw the batch
+        //Draw the batch with specified drawing parameters.
         let mut draw_params = DrawParams::new();
         draw_params
             .backface_culling(BackfaceCullingMode::CullCounterClockwise)
@@ -85,25 +83,15 @@ impl UserWindowHandler for MainWindow {
                 test: glium::DepthTest::IfMoreOrEqual,
                 ..Default::default()
             });
-        canvas.draw_batch(wnd, brush, batch.bake_buffers(wnd), &draw_params);
+        canvas.draw_batch(
+            wnd,
+            brush,
+            self.batch.as_ref().unwrap().bake_buffers(wnd),
+            &draw_params,
+        );
 
         //Finish drawing the frame
         canvas.finish_canvas()?;
         Ok(())
-    }
-}
-
-fn main() {
-    let res = Window::create_and_run(
-        WindowSettings::new(60),
-        MainWindow {
-            brush: None,
-            camera: Mat4::IDENTITY,
-            projection: Mat4::IDENTITY,
-            rotation: 0.0,
-        },
-    );
-    if let Err(e) = res {
-        println!("{:?}", e);
     }
 }

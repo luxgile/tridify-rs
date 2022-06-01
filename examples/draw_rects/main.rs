@@ -1,23 +1,17 @@
 use std::path::Path;
 
-use ldrawy::{
-    self, Brush, Color, DrawParams, LErr, ShapeBatch, Texture2D, Uniform, UserWindowHandler, Vec3,
-    Window, WindowSettings,
-};
+use ldrawy::*;
 
+fn main() -> Result<(), LErr> {
+    Window::create_and_run(WindowSettings::new(60), MainWindow::default())
+}
+
+#[derive(Default)]
 struct MainWindow {
     brush: Option<Brush>,
+    batch: Option<ShapeBatch>,
 }
-impl MainWindow {
-    fn debug_framerate(&self, wnd: &Window) {
-        println!(
-            "Frame:{} - Delta:{:.4}s ({:.2} ms)",
-            wnd.frame_count(),
-            wnd.delta_time(),
-            wnd.delta_time() * 1000.0
-        );
-    }
-}
+
 impl UserWindowHandler for MainWindow {
     fn startup(&mut self, wnd: &Window) -> Result<(), LErr> {
         //Create a brush and add a uniform main texture
@@ -29,35 +23,34 @@ impl UserWindowHandler for MainWindow {
         )
         .expect("Failed to create brush");
 
-        let texture = Texture2D::new(wnd, Path::new("examples/draw_rects/assets/wood.png"));
+        let texture = Texture2D::new(wnd, Path::new("examples/draw_rects/wood.png"));
 
         brush.add_uniform(Uniform::new(
             String::from("main_tex"),
             ldrawy::UniformValue::Texture2D(texture.texture, None),
         ))?;
 
-        self.brush = Option::Some(brush);
-        Ok(())
-    }
-    fn cleanup(&mut self, _wnd: &Window) { println!("Cleaned process") }
-    fn process_render(&mut self, wnd: &Window) -> Result<(), LErr> {
-        self.debug_framerate(wnd);
+        self.brush = Some(brush);
 
-        //Start frame
-        let mut canvas = wnd.start_frame(Color::BLUE_TEAL);
-
-        //Create batch and add shapes that will be drawn
+        //Create a batch, add 4 rectangles and add them to our window.
         let mut batch = ShapeBatch::default();
         batch.add_2d_square(Vec3::new(-0.5, -0.5, 0.0), 0.5, 0.5, Color::YELLOW);
         batch.add_2d_square(Vec3::new(0.5, -0.5, 0.0), 0.5, 0.5, Color::BLUE);
         batch.add_2d_square(Vec3::new(0.5, 0.5, 0.0), 0.5, 0.5, Color::GREEN);
         batch.add_2d_square(Vec3::new(-0.5, 0.5, 0.0), 0.5, 0.5, Color::RED);
+        self.batch = Some(batch);
+
+        Ok(())
+    }
+    fn process_render(&mut self, wnd: &Window) -> Result<(), LErr> {
+        //Start frame
+        let mut canvas = wnd.start_frame(Color::BLUE_TEAL);
 
         //Draw batch using the brush created
         canvas.draw_batch(
             wnd,
             self.brush.as_ref().unwrap(),
-            batch.bake_buffers(wnd),
+            self.batch.as_ref().unwrap().bake_buffers(wnd),
             &DrawParams::default(),
         );
 
@@ -65,8 +58,4 @@ impl UserWindowHandler for MainWindow {
         canvas.finish_canvas()?;
         Ok(())
     }
-}
-
-fn main() -> Result<(), LErr> {
-    Window::create_and_run(WindowSettings::new(60), MainWindow { brush: None })
 }

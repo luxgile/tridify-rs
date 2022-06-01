@@ -10,7 +10,7 @@ use glium::vertex::Attribute;
 /// let white_color = Color::WHITE;
 /// let white_color = Color::new(1.0, 1.0, 1.0, 1.0);
 /// ```
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Color {
     pub r: f32,
     pub g: f32,

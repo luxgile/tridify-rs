@@ -4,7 +4,7 @@ use glium::implement_vertex;
 use crate::core::Color;
 
 implement_vertex!(Vertex, pos, color, uv);
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Vertex {
     pub pos: [f32; 3],
     pub color: Color,

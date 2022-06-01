@@ -7,6 +7,7 @@ use crate::{core::Window, LErr};
 use super::{Uniform, UniformBuffer};
 
 ///Used to tell the GPU how to draw the shapes provided.
+#[derive(Debug)]
 pub struct Brush {
     program: Program,
     uniform_buffer: UniformBuffer,

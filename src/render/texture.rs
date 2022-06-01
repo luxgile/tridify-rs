@@ -7,6 +7,7 @@ use crate::Window;
 #[derive(Debug)]
 pub struct TextureSettings {}
 
+#[derive(Debug)]
 pub struct Texture2D {
     pub texture: SrgbTexture2d,
 }

@@ -1,4 +1,3 @@
-use glam::Mat3;
 use glium::uniforms::{self, SamplerBehavior};
 
 use crate::LErr;

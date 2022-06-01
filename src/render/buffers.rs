@@ -2,7 +2,7 @@ use crate::core::*;
 use crate::{vertex, Color, Vec3, Vertex, Window};
 
 ///Queue of shapes to be drawn. All shapes added to the same batch will be drawn at the same time using the same brush.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ShapeBatch {
     vertices: Vec<Vertex>,
     indices: Vec<u32>,
@@ -23,7 +23,7 @@ impl ShapeBatch {
         self
     }
 
-    ///Add a square to the batch specifying the center, width and height
+    ///Add a square on axis XY to the batch specifying the center, width, height and color.
     pub fn add_2d_square(&mut self, center: Vec3, w: f32, h: f32, color: Color) {
         //Adding vertices
         let hw = w / 2.0;
@@ -132,6 +132,7 @@ impl ShapeBatch {
 }
 
 ///Buffers created from the batch and prepared to be sent directly to the GPU
+#[derive(Debug)]
 pub struct ShapeBuffer {
     vertex_buffer: glium::VertexBuffer<Vertex>,
     index_buffer: glium::IndexBuffer<u32>,

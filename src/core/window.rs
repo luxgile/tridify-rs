@@ -28,6 +28,7 @@ pub trait UserWindowHandler {
 }
 
 ///Basic settings to create a window.
+#[derive(Debug, Clone)]
 pub struct WindowSettings {
     max_fps: u64,
 }
@@ -38,6 +39,7 @@ impl WindowSettings {
 
 /// Internal representation of a window with direct access to OpenGL context. Needs to be used in most drawing and GPU
 /// related functions.
+#[derive(Debug)]
 pub struct Window {
     settings: WindowSettings,
     display: Display,
