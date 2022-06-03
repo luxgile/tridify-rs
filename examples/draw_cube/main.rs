@@ -21,12 +21,7 @@ struct MainWindow {
 impl UserWindowHandler for MainWindow {
     fn startup(&mut self, wnd: &Window) -> Result<(), LErr> {
         //Create a brush and add a uniform main texture
-        let mut brush = Brush::from_path(
-            wnd,
-            Path::new("examples/shared_assets/basic3d.vert"),
-            Path::new("examples/shared_assets/basic3d.frag"),
-            None,
-        )?;
+        let mut brush = Brush::from_base_unlit(wnd)?;
 
         let texture = Texture2D::new(wnd, Path::new("examples/draw_cube/UV_1k.jpg"));
 
@@ -61,7 +56,6 @@ impl UserWindowHandler for MainWindow {
         let mut canvas = wnd.start_frame(Color::BLUE_TEAL);
 
         //Update rotation and calculate camera mvp.
-        //TODO: Cache mvp calculation in startup or add camera movement to the example.
         self.rotation += wnd.delta_time() as f32;
         let model = Mat4::from_rotation_y(self.rotation);
         let mvp = self.projection * self.camera * model;

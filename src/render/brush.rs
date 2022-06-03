@@ -14,6 +14,15 @@ pub struct Brush {
 }
 
 impl Brush {
+    pub fn from_base_unlit(wnd: &Window) -> Result<Self, LErr> {
+        Ok(Brush::from_source(
+            wnd,
+            brush_templates::UNLIT_VERT.to_string(),
+            brush_templates::UNLIT_FRAG.to_string(),
+            None,
+        ))
+    }
+
     pub fn from_path(
         wnd: &Window, vertex: &Path, fragment: &Path, geometry: Option<&Path>,
     ) -> Result<Self, LErr> {
@@ -71,4 +80,36 @@ impl Brush {
     /// Get a reference to the brush's uniform buffer.
     #[must_use]
     pub fn uniform_buffer(&self) -> &UniformBuffer { &self.uniform_buffer }
+}
+
+mod brush_templates {
+    pub const UNLIT_FRAG: &str = r#"
+        #version 330 core
+        in vec4 frag_color;
+        in vec2 frag_uv;
+
+        uniform sampler2D main_tex;
+        
+        out vec4 out_color;
+        
+        void main(){
+            out_color=vec4(frag_color)*texture(main_tex,frag_uv);
+        }"#;
+
+    pub const UNLIT_VERT: &str = r#"
+        #version 330 core
+        in vec3 pos;
+        in vec4 color;
+        in vec2 uv;
+
+        uniform mat4 mvp;
+
+        out vec4 frag_color;
+        out vec2 frag_uv;
+
+        void main(){
+            frag_uv=uv;
+            frag_color=color;
+            gl_Position=mvp*vec4(pos,1.);
+        }"#;
 }

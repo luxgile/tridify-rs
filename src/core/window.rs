@@ -115,11 +115,14 @@ impl Window {
                     *flow = ControlFlow::Exit;
                     return true;
                 }
-                glutin::event::WindowEvent::KeyboardInput { input, .. }
-                    if input.virtual_keycode.unwrap() == VirtualKeyCode::Escape =>
-                {
-                    *flow = ControlFlow::Exit;
-                    return true;
+                glutin::event::WindowEvent::KeyboardInput { input, .. } => {
+                    if let Some(key) = input.virtual_keycode {
+                        if key == VirtualKeyCode::Escape {
+                            *flow = ControlFlow::Exit;
+                            return true;
+                        }
+                    }
+                    return false;
                 }
                 _ => return true,
             },

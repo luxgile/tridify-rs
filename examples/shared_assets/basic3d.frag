@@ -3,7 +3,6 @@ in vec4 frag_color;
 in vec2 frag_uv;
 
 uniform sampler2D main_tex;
-uniform vec4 directional_light;
 
 out vec4 out_color;
 
