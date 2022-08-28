@@ -23,6 +23,10 @@ impl ShapeBatch {
         self
     }
 
+    pub fn add_rect(&mut self, rect: &Rect, color: Color) {
+        self.add_2d_square(rect.center().extend(0.), rect.size.x, rect.size.y, color);
+    }
+
     ///Add a square on axis XY to the batch specifying the center, width, height and color.
     pub fn add_2d_square(&mut self, center: Vec3, w: f32, h: f32, color: Color) {
         //Adding vertices

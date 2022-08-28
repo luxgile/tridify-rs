@@ -21,7 +21,7 @@ struct MainWindow {
 impl UserWindowHandler for MainWindow {
     fn startup(&mut self, wnd: &Window) -> Result<(), LErr> {
         //Create a brush and add a uniform main texture
-        let mut brush = Brush::from_base_unlit(wnd)?;
+        let mut brush = Brush::from_base_unlit(wnd);
 
         let texture = Texture2D::new(wnd, Path::new("examples/draw_cube/UV_1k.jpg"));
 

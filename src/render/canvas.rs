@@ -1,8 +1,9 @@
+use glam::{IVec2, UVec2, Vec2};
 use glium::{BackfaceCullingMode, Surface};
 
 use crate::{
     core::{Color, Window},
-    LErr,
+    LErr, Rect,
 };
 
 use super::{Brush, ShapeBuffer};
@@ -68,5 +69,13 @@ impl Canvas {
                 &params.params,
             )
             .unwrap();
+    }
+    pub fn get_size(&self) -> UVec2 {
+        let dim = self.frame.get_dimensions();
+        UVec2::new(dim.0, dim.1)
+    }
+    pub fn get_rect(&self) -> Rect {
+        let dim = self.frame.get_dimensions();
+        Rect::new(Vec2::new(0., 0.), Vec2::new(dim.0 as f32, dim.1 as f32))
     }
 }

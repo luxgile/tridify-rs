@@ -14,13 +14,13 @@ pub struct Brush {
 }
 
 impl Brush {
-    pub fn from_base_unlit(wnd: &Window) -> Result<Self, LErr> {
-        Ok(Brush::from_source(
+    pub fn from_base_unlit(wnd: &Window) -> Self {
+        Brush::from_source(
             wnd,
             brush_templates::UNLIT_VERT.to_string(),
             brush_templates::UNLIT_FRAG.to_string(),
             None,
-        ))
+        )
     }
 
     pub fn from_path(

@@ -18,8 +18,7 @@ use super::Color;
 pub trait UserWindowHandler {
     fn startup(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
 
-    fn process_logic(&mut self) {
-    }
+    fn process_logic(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
 
     fn process_render(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
 
@@ -51,7 +50,7 @@ impl Window {
     /// Create and start the window run loop, using the settings and user handler provided.
     pub fn create_and_run(
         settings: WindowSettings, mut user: impl UserWindowHandler + 'static,
-    ) -> Result<(), LErr> {
+    ) -> ! {
         let event_loop = glutin::event_loop::EventLoop::new();
         let wb = glutin::window::WindowBuilder::new();
         let cb = glutin::ContextBuilder::new();
@@ -69,7 +68,7 @@ impl Window {
             print!("{:?}\n", e);
         }
 
-        event_loop.run(move |ev, _, flow| {
+        event_loop.run(move |ev: Event<'_, ()>, _, flow| {
             let start_time = Instant::now();
 
             if Self::manage_events(&ev, flow) {
@@ -80,10 +79,11 @@ impl Window {
             }
 
             window.frame_count += 1;
-            let result = user.process_render(&window);
-            if let Err(e) = result {
-                println!("{:?}", e);
-            }
+            //TODO: Separate logic and rending into different threads.
+            user.process_logic(&window)
+                .expect("Issue processing logic.");
+            user.process_render(&window)
+                .expect("Issue rendering window.");
 
             //Limit framerate
             let elapsed_time = Instant::now().duration_since(start_time).as_millis() as u64;
