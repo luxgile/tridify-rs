@@ -145,7 +145,6 @@ impl uniforms::Uniforms for UniformBuffer {
                         Some(SamplerBehavior::default()),
                     ),
                 ),
-                _ => panic!("{:?} not yet implemented", uniform),
             }
         }
     }

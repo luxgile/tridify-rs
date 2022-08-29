@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use glium::{
+pub use glium::{
     glutin::{
         self,
         event::{Event, VirtualKeyCode},
@@ -18,7 +18,9 @@ use super::Color;
 pub trait UserWindowHandler {
     fn startup(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
 
-    fn process_logic(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
+    fn process_logic(&mut self, _wnd: &Window, _event: &Event<'_, ()>) -> Result<(), LErr> {
+        Ok(())
+    }
 
     fn process_render(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
 
@@ -80,7 +82,7 @@ impl Window {
 
             window.frame_count += 1;
             //TODO: Separate logic and rending into different threads.
-            user.process_logic(&window)
+            user.process_logic(&window, &ev)
                 .expect("Issue processing logic.");
             user.process_render(&window)
                 .expect("Issue rendering window.");
@@ -107,7 +109,9 @@ impl Window {
         canvas
     }
 
-    ///Manages the current event and changes the flow if needed. Returns if a frame needs to be waited.
+    ///Manages the current event and changes the flow if needed.
+    ///
+    /// Returns if a frame needs to be waited.
     fn manage_events(ev: &Event<()>, flow: &mut ControlFlow) -> bool {
         match ev {
             glutin::event::Event::WindowEvent { event, .. } => match event {

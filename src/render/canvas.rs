@@ -1,4 +1,4 @@
-use glam::{IVec2, UVec2, Vec2};
+use glam::{UVec2, Vec2};
 use glium::{BackfaceCullingMode, Surface};
 
 use crate::{
