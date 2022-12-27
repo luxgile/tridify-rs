@@ -112,7 +112,7 @@ impl ShapeBatch {
     }
 
     ///Create buffers based on current batch data.
-    pub fn bake_buffers(&self, wnd: &Window) -> ShapeBuffer {
+    pub fn bake_buffers(&self, wnd: &impl Window) -> ShapeBuffer {
         let vertex_buffer = glium::VertexBuffer::new(wnd.display(), &self.vertices).unwrap();
         let index_buffer = glium::IndexBuffer::new(
             wnd.display(),

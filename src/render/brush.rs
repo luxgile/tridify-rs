@@ -14,7 +14,7 @@ pub struct Brush {
 }
 
 impl Brush {
-    pub fn from_base_unlit(wnd: &Window) -> Self {
+    pub fn from_base_unlit(wnd: &impl Window) -> Self {
         Brush::from_source(
             wnd,
             brush_templates::UNLIT_VERT.to_string(),
@@ -24,7 +24,7 @@ impl Brush {
     }
 
     pub fn from_path(
-        wnd: &Window, vertex: &Path, fragment: &Path, geometry: Option<&Path>,
+        wnd: &impl Window, vertex: &Path, fragment: &Path, geometry: Option<&Path>,
     ) -> Result<Self, LErr> {
         let geometry_source = if let Some(path) = geometry {
             let source = std::fs::read_to_string(path);
@@ -40,7 +40,7 @@ impl Brush {
         ))
     }
     pub fn from_source<'a>(
-        wnd: &Window, vertex: String, fragment: String, geometry: Option<String>,
+        wnd: &impl Window, vertex: String, fragment: String, geometry: Option<String>,
     ) -> Self {
         let program = glium::Program::from_source(
             wnd.display(),

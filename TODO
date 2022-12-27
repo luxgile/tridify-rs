@@ -1,9 +1,0 @@
-Todo:
-  ☐ Add more primitives
-    ☐ Capsule
-    ☐ Sphere
-  ☐ Predefined Shaders
-    ✔ Basic Unlit @done(22-06-04 01:40)
-    ☐ Basic Lit 
-  ☐ GPU Advanced features
-    ☐ Render to texture

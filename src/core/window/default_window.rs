@@ -9,63 +9,50 @@ pub use glium::{
     Display,
 };
 
-use crate::{render::Canvas, LErr};
-
-use super::Color;
-
-/// Manages window lifetime events from the user side.
-/// Needs to be implemented in user defined struct and sent to LDrawy to start drawing a window.
-pub trait UserWindowHandler {
-    fn startup(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
-
-    fn process_logic(&mut self, _wnd: &Window, _event: &Event<'_, ()>) -> Result<(), LErr> {
-        Ok(())
-    }
-
-    fn process_render(&mut self, _wnd: &Window) -> Result<(), LErr> { Ok(()) }
-
-    fn cleanup(&mut self, _wnd: &Window) {
-    }
-}
-
-///Basic settings to create a window.
-#[derive(Debug, Clone)]
-pub struct WindowSettings {
-    max_fps: u64,
-}
-
-impl WindowSettings {
-    pub fn new(max_fps: u64) -> Self { Self { max_fps } }
-}
+use crate::{render::Canvas, Color, UserHandle, Window, WindowSettings};
 
 /// Internal representation of a window with direct access to OpenGL context. Needs to be used in most drawing and GPU
 /// related functions.
 #[derive(Debug)]
-pub struct Window {
+pub struct DefaultWindow {
     settings: WindowSettings,
     display: Display,
     delta_time: f64,
     frame_count: u64,
 }
 
-impl Window {
+impl Window for DefaultWindow {
+    fn display(&self) -> &Display { self.display() }
+
+    fn start_frame(&mut self, color: Color) -> Canvas {
+        let mut canvas = Canvas::new(self.display.draw());
+        canvas.clear_color(color);
+        canvas
+    }
+
+    fn delta_time(&self) -> f64 { self.delta_time() }
+
+    fn frame_count(&self) -> u64 { self.frame_count() }
+}
+
+impl DefaultWindow {
     /// Create and start the window run loop, using the settings and user handler provided.
     pub fn create_and_run(
-        settings: WindowSettings, mut user: impl UserWindowHandler + 'static,
+        settings: WindowSettings, mut user: impl UserHandle<DefaultWindow> + 'static,
     ) -> ! {
         let event_loop = glutin::event_loop::EventLoop::new();
         let wb = glutin::window::WindowBuilder::new();
         let cb = glutin::ContextBuilder::new();
         let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-        let mut window = Window {
+        let mut window = Self {
             settings,
             display,
             delta_time: 0.0,
             frame_count: 0,
         };
 
-        let result = user.startup(&window);
+        let result = user.startup(&mut window);
         if let Err(e) = result {
             print!("{:?}\n", e);
         }
@@ -75,16 +62,16 @@ impl Window {
 
             if Self::manage_events(&ev, flow) {
                 if let ControlFlow::Exit = flow {
-                    user.cleanup(&window);
+                    user.cleanup(&mut window);
                 }
                 return;
             }
 
             window.frame_count += 1;
             //TODO: Separate logic and rending into different threads.
-            user.process_logic(&window, &ev)
+            user.process_logic(&mut window, &ev)
                 .expect("Issue processing logic.");
-            user.process_render(&window)
+            user.process_render(&mut window)
                 .expect("Issue rendering window.");
 
             //Limit framerate
@@ -100,13 +87,6 @@ impl Window {
             let wait_instant = start_time + Duration::from_millis(wait_time);
             *flow = glutin::event_loop::ControlFlow::WaitUntil(wait_instant);
         });
-    }
-
-    ///Get Canvas to start drawing in the back buffer.
-    pub fn start_frame(&self, color: Color) -> Canvas {
-        let mut canvas = Canvas::new(self.display.draw());
-        canvas.clear_color(color);
-        canvas
     }
 
     ///Manages the current event and changes the flow if needed.

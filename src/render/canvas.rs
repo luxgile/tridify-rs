@@ -58,7 +58,7 @@ impl Canvas {
 
     ///Draw batch on the canvas.
     pub fn draw_batch(
-        &mut self, _wnd: &Window, brush: &Brush, buffers: ShapeBuffer, params: &DrawParams,
+        &mut self, _wnd: &impl Window, brush: &Brush, buffers: ShapeBuffer, params: &DrawParams,
     ) {
         self.frame
             .draw(

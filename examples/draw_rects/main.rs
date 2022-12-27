@@ -3,17 +3,17 @@ use std::path::Path;
 use ldrawy::*;
 
 fn main() -> Result<(), LErr> {
-    Window::create_and_run(WindowSettings::new(60), MainWindow::default())
+    DefaultWindow::create_and_run(WindowSettings::new(60), AppHandle::default())
 }
 
 #[derive(Default)]
-struct MainWindow {
+struct AppHandle {
     brush: Option<Brush>,
     batch: Option<ShapeBatch>,
 }
 
-impl UserWindowHandler for MainWindow {
-    fn startup(&mut self, wnd: &Window) -> Result<(), LErr> {
+impl UserHandle<DefaultWindow> for AppHandle {
+    fn startup(&mut self, wnd: &mut DefaultWindow) -> Result<(), LErr> {
         //Create a brush and add a uniform main texture
         let mut brush = Brush::from_path(
             wnd,
@@ -42,7 +42,7 @@ impl UserWindowHandler for MainWindow {
 
         Ok(())
     }
-    fn process_render(&mut self, wnd: &Window) -> Result<(), LErr> {
+    fn process_render(&mut self, wnd: &mut DefaultWindow) -> Result<(), LErr> {
         //Start frame
         let mut canvas = wnd.start_frame(Color::BLUE_TEAL);
 

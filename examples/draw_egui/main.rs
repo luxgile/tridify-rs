@@ -10,10 +10,7 @@ pub fn main() -> Result<(), LErr> {
 //User defined window with data neccesary between frames. In this case we cache the brush and batch
 //to save performance.
 #[derive(Default)]
-pub struct AppHandle {
-    brush: Option<Brush>,
-    batch: Option<ShapeBatch>,
-}
+pub struct AppHandle;
 
 impl UserHandle<DefaultWindow> for AppHandle {
     //Called once when window is created.

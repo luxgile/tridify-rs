@@ -1,7 +1,7 @@
 [package]
 name = "ldrawy"
 description = "Fast render OpenGL API that aims to simplify rendering pipelines. Currently under heavy development."
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/luxgile/LDrawy"
@@ -10,8 +10,14 @@ readme = "readme.md"
 keywords = ["graphics", "render", "OpenGL", "GPU", "API"]
 categories = ["multimedia", "rendering", "rendering::engine"]
 
+[features]
+# imgui-rs = ["dep:imgui", "dep:imgui-glium-renderer"]
 
 [dependencies]
-glium = "0.31.0"
+glam = "0.22.0"
 image = "0.24.2"
-glam = "0.20.5"
+pollster = "0.2.5"
+bytemuck = { version = "1.12.3", features = ["derive"]}
+winit = "0.27.5"
+wgpu = "0.14.2"
+env_logger = "0.10.0"

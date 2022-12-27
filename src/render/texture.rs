@@ -13,7 +13,7 @@ pub struct Texture2D {
 }
 
 impl Texture2D {
-    pub fn new(wnd: &Window, path: &Path) -> Texture2D {
+    pub fn new(wnd: &impl Window, path: &Path) -> Texture2D {
         use std::io::Cursor;
         let format = match path.extension().unwrap().to_str().unwrap() {
             "png" => image::ImageFormat::Png,

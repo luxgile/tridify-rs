@@ -4,13 +4,13 @@ use glium::{BackfaceCullingMode, Depth};
 use ldrawy::*;
 
 fn main() -> Result<(), LErr> {
-    Window::create_and_run(WindowSettings::new(60), MainWindow::default())
+    DefaultWindow::create_and_run(WindowSettings::new(60), AppHandle::default())
 }
 
 // User defined window with data neccesary between frames.
 // In this case we cache the brush, batch, camera matrices and cube rotation.
 #[derive(Default)]
-struct MainWindow {
+struct AppHandle {
     brush: Option<Brush>,
     batch: Option<ShapeBatch>,
     camera: Mat4,
@@ -18,8 +18,8 @@ struct MainWindow {
     rotation: f32,
 }
 
-impl UserWindowHandler for MainWindow {
-    fn startup(&mut self, wnd: &Window) -> Result<(), LErr> {
+impl UserHandle<DefaultWindow> for AppHandle {
+    fn startup(&mut self, wnd: &mut DefaultWindow) -> Result<(), LErr> {
         //Create a brush and add a uniform main texture
         let mut brush = Brush::from_base_unlit(wnd);
 
@@ -51,7 +51,7 @@ impl UserWindowHandler for MainWindow {
         Ok(())
     }
 
-    fn process_render(&mut self, wnd: &Window) -> Result<(), LErr> {
+    fn process_render(&mut self, wnd: &mut DefaultWindow) -> Result<(), LErr> {
         //Start frame
         let mut canvas = wnd.start_frame(Color::BLUE_TEAL);
 
