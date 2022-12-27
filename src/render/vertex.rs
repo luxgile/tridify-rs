@@ -1,9 +1,7 @@
 use glam::Vec3;
-use glium::implement_vertex;
 
 use crate::core::Color;
 
-implement_vertex!(Vertex, pos, color, uv);
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
     pub pos: [f32; 3],

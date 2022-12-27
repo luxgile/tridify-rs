@@ -1,61 +1,23 @@
 use std::path::Path;
 
-use ldrawy::*;
+use nucley::{vertex, Color, RenderOptions};
 
-//Start up window.
-pub fn main() -> Result<(), LErr> {
-    DefaultWindow::create_and_run(WindowSettings::new(60), AppHandle::default())
-}
-
-//User defined window with data neccesary between frames. In this case we cache the brush and batch
-//to save performance.
-#[derive(Default)]
-pub struct AppHandle {
-    brush: Option<Brush>,
-    batch: Option<ShapeBatch>,
-}
-
-impl UserHandle<DefaultWindow> for AppHandle {
-    //Called once when window is created.
-    fn startup(&mut self, wnd: &mut DefaultWindow) -> Result<(), LErr> {
-        //Brush define how shapes are drawn. Here we are creating one based in the shaders found below.
-        self.brush = Some(
-            Brush::from_path(
-                wnd,
-                Path::new("examples/shared_assets/basic.vert"),
-                Path::new("examples/shared_assets/basic.frag"),
-                None,
-            )
-            .expect("Failed to create brush"),
-        );
-        //Batches are a collection of shapes that will be drawn. These need to be baked once the frame will be drawn.
-        let mut batch = ShapeBatch::default();
-
-        //Add triangle passing vertices and color.
+pub fn main() {
+    nucley::start(|graphics, app, event_loop| async {
+        let brush = Brush::default_lit();
+        let batch = ShapeBatch::default();
         batch.add_triangle([
             vertex!(-0.5, -0.5, 0.0, Color::SILVER),
             vertex!(0.0, 0.5, 0.0, Color::SILVER),
             vertex!(0.5, -0.5, 0.0, Color::SILVER),
         ]);
-        self.batch = Some(batch);
-        Ok(())
-    }
 
-    //Called all frames
-    fn process_render(&mut self, wnd: &mut DefaultWindow) -> Result<(), LErr> {
-        //Obtain canvas, where the frame will be drawn.
-        let mut canvas = wnd.start_frame(Color::BLUE_TEAL);
-
-        //Draw the batch cached into the canvas.
-        canvas.draw_batch(
-            wnd,
-            self.brush.as_ref().unwrap(),
-            self.batch.as_ref().unwrap().bake_buffers(wnd),
-            &DrawParams::default(),
-        );
-
-        //Make sure you finish the canvas at the end of rendering.
-        canvas.finish_canvas()?;
-        Ok(())
-    }
+        let wnd = app.create_window(graphics, event_loop, |wnd, graphics| {
+            let frame = wnd
+                .start_frame(&graphics, None)
+                .expect("Issue creating frame.");
+            frame.render(&brush, &batch);
+            frame.finish(&graphics);
+        });
+    })
 }

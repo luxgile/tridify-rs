@@ -1,5 +1,3 @@
-use glium::vertex::Attribute;
-
 /// RGBA representation of colors. Each value goes from 0 to 1.
 ///
 /// You can use the constants for some default values.
@@ -12,14 +10,14 @@ use glium::vertex::Attribute;
 /// ```
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Color {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
-    pub a: f32,
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
+    pub a: f64,
 }
 
 impl Color {
-    pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self { Self { r, g, b, a } }
+    pub const fn new(r: f64, g: f64, b: f64, a: f64) -> Self { Self { r, g, b, a } }
 
     pub const CLEAR: Color = Color::new(0.0, 0.0, 0.0, 0.0);
     pub const BLACK: Color = Color::new(0.0, 0.0, 0.0, 1.0);
@@ -38,6 +36,13 @@ impl Color {
     pub const BLUE_AQUA: Color = Color::new(0.0, 1.0, 1.0, 1.0);
 }
 
-unsafe impl Attribute for Color {
-    fn get_type() -> glium::vertex::AttributeType { glium::vertex::AttributeType::F32F32F32F32 }
+impl Into<wgpu::Color> for Color {
+    fn into(self) -> wgpu::Color {
+        wgpu::Color {
+            r: self.r,
+            g: self.g,
+            b: self.b,
+            a: self.a,
+        }
+    }
 }

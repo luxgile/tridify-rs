@@ -1,5 +1,5 @@
 [package]
-name = "ldrawy"
+name = "nucley"
 description = "Fast render OpenGL API that aims to simplify rendering pipelines. Currently under heavy development."
 version = "0.2.0"
 edition = "2021"
@@ -9,6 +9,10 @@ readme = "readme.md"
 
 keywords = ["graphics", "render", "OpenGL", "GPU", "API"]
 categories = ["multimedia", "rendering", "rendering::engine"]
+
+[[example]]
+name = "draw_triangle"
+path = "examples/draw_triangle/main.rs"
 
 [features]
 # imgui-rs = ["dep:imgui", "dep:imgui-glium-renderer"]
