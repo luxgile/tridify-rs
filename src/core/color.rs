@@ -1,3 +1,5 @@
+use bytemuck::{Pod, Zeroable};
+
 /// RGBA representation of colors. Each value goes from 0 to 1.
 ///
 /// You can use the constants for some default values.
@@ -8,16 +10,17 @@
 /// let white_color = Color::WHITE;
 /// let white_color = Color::new(1.0, 1.0, 1.0, 1.0);
 /// ```
-#[derive(Clone, Copy, Debug, Default)]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Pod, Zeroable)]
 pub struct Color {
-    pub r: f64,
-    pub g: f64,
-    pub b: f64,
-    pub a: f64,
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32,
 }
 
 impl Color {
-    pub const fn new(r: f64, g: f64, b: f64, a: f64) -> Self { Self { r, g, b, a } }
+    pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self { Self { r, g, b, a } }
 
     pub const CLEAR: Color = Color::new(0.0, 0.0, 0.0, 0.0);
     pub const BLACK: Color = Color::new(0.0, 0.0, 0.0, 1.0);
@@ -39,10 +42,10 @@ impl Color {
 impl Into<wgpu::Color> for Color {
     fn into(self) -> wgpu::Color {
         wgpu::Color {
-            r: self.r,
-            g: self.g,
-            b: self.b,
-            a: self.a,
+            r: self.r as f64,
+            g: self.g as f64,
+            b: self.b as f64,
+            a: self.a as f64,
         }
     }
 }

@@ -6,8 +6,9 @@ use wgpu::{
     RenderPassDescriptor, RenderPipeline, SurfaceTexture, TextureView, TextureViewDescriptor,
 };
 
-use crate::core::WindowSurface;
-use crate::graphics::Graphics;
+use crate::core::WindowView;
+use crate::Graphics;
+use crate::ShapeBuffer;
 use crate::{core::Color, Rect};
 
 use super::Brush;
@@ -19,7 +20,7 @@ pub struct RenderOptions {
 impl Default for RenderOptions {
     fn default() -> Self {
         Self {
-            clear_color: Color::WHITE,
+            clear_color: Color::BLACK,
         }
     }
 }
@@ -34,14 +35,14 @@ pub struct Frame {
 
 impl Frame {
     pub fn new(
-        wnd: &WindowSurface, graphics: &Graphics, options: Option<RenderOptions>,
+        graphics: &impl Graphics, options: Option<RenderOptions>,
     ) -> Result<Self, Box<dyn Error>> {
-        let frame_texture = wnd.surface.get_current_texture()?;
+        let frame_texture = graphics.get_surface().get_current_texture()?;
         let frame_view = frame_texture
             .texture
             .create_view(&TextureViewDescriptor::default());
         let encoder = graphics
-            .get_device()?
+            .get_device()
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
         Ok(Self {
             options,
@@ -52,8 +53,8 @@ impl Frame {
     }
 
     ///Draw batch on the canvas.
-    pub fn render(&mut self, brush: Brush) {
-        let pass = self.encoder.begin_render_pass(&RenderPassDescriptor {
+    pub fn render(&mut self, brush: &Brush, buffer: &ShapeBuffer) {
+        let mut pass = self.encoder.begin_render_pass(&RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(RenderPassColorAttachment {
                 view: &self.frame_view,
@@ -71,15 +72,15 @@ impl Frame {
             depth_stencil_attachment: None,
         });
 
-        //TODO: pass.set_pipeline(brush.pipeline);
+        pass.set_pipeline(&brush.pipeline);
         //TODO: pass.set_bind_group(0, &, offsets)
-        //TODO: Vertex buffer
-        //TODO: Index buffer
-        //TODO: pass.draw_indexed(indices, 0, 0..1);
+        pass.set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
+        pass.set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+        pass.draw_indexed(0..buffer.index_len, 0, 0..1);
     }
     ///Finishes frame drawing.
-    pub fn finish(mut self, graphics: &Graphics) -> Result<(), &'static str> {
-        let queue = graphics.get_queue()?;
+    pub fn finish(mut self, graphics: &impl Graphics) -> Result<(), &'static str> {
+        let queue = graphics.get_queue();
         queue.submit(Some(self.encoder.finish()));
         self.frame_texture.present();
         Ok(())
