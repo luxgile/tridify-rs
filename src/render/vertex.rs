@@ -65,7 +65,7 @@ macro_rules! vertex {
         nucley::Vertex::new($a, $b, $c, None, None)
     };
     ($a:expr, $b:expr, $c:expr, $col:expr) => {
-        nucley::Vertex::new($a, $b, $c, Some($col), None)
+        crate::Vertex::new($a, $b, $c, Some($col), None)
     };
     ($a:expr, $b:expr, $c:expr, $col:expr, $uv:expr) => {
         crate::Vertex::new($a, $b, $c, Some($col), Some($uv))

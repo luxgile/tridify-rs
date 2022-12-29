@@ -5,6 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use env_logger::fmt::*;
 use glam::UVec2;
 use wgpu::{
     Adapter, Backends, Device, DeviceDescriptor, Features, Limits, Queue, RequestAdapterOptions,
@@ -25,6 +26,15 @@ pub struct Nucley {
 }
 impl Nucley {
     pub fn new() -> Self {
+        cfg_if::cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+                console_log::init_with_level(log::Level::Warn).expect("Couldn't initialize logger");
+            } else {
+                env_logger::init();
+            }
+        }
+
         Self {
             wgpu: wgpu::Instance::new(Backends::all()),
             wb: Some(EventLoop::new()),
@@ -64,6 +74,24 @@ impl Nucley {
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
         };
         surface.configure(&device, &surface_config);
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            use winit::dpi::PhysicalSize;
+            wnd.set_inner_size(PhysicalSize::new(450, 400));
+
+            use winit::platform::web::WindowExtWebSys;
+            web_sys::window()
+                .and_then(|win| win.document())
+                .and_then(|doc| {
+                    let dst = doc.get_element_by_id("wasm-example")?;
+                    let canvas = web_sys::Element::from(wnd.canvas());
+                    dst.append_child(&canvas).ok()?;
+                    Some(())
+                })
+                .expect("Couldn't append canvas to document body.");
+        }
+
         let window = Window {
             user_loop: None,
             wnd: WindowView {
@@ -75,6 +103,7 @@ impl Nucley {
                 surface,
             },
         };
+
         self.windows.insert(wnd_id, window);
         let window = self.windows.get_mut(&wnd_id).unwrap();
         Ok(window)
@@ -119,48 +148,3 @@ pub trait Graphics {
     fn get_queue(&self) -> &Queue;
     fn get_surface(&self) -> &Surface;
 }
-// impl Graphics {
-//     pub fn new() -> Self {
-//         env_logger::init();
-//         let wgpu = wgpu::Instance::new(wgpu::Backends::all());
-//         let surface = unsafe { wgpu.create_surface(&wnd) };
-//         let surface
-//         Self {
-//             wgpu,
-//             cached_surface: None,
-//             adapter: None,
-//             device: None,
-//             queue: None,
-//             format: None,
-//         }
-//     }
-
-//     async fn init_internals(&mut self, surface: &Surface) -> Result<(), Box<dyn Error>> {
-//         let adapter = self
-//             .wgpu
-//             .request_adapter(&RequestAdapterOptions {
-//                 power_preference: wgpu::PowerPreference::default(),
-//                 force_fallback_adapter: false,
-//                 compatible_surface: Some(&surface),
-//             })
-//             .await
-//             .ok_or("Not able to request an adapter.")?;
-
-//         let (device, queue) = adapter
-//             .request_device(
-//                 &DeviceDescriptor {
-//                     label: None,
-//                     features: Features::empty(),
-//                     limits: Limits::downlevel_webgl2_defaults(),
-//                 },
-//                 None,
-//             )
-//             .await?;
-
-//         self.format = Some(surface.get_supported_formats(&adapter)[0]);
-//         self.adapter = Some(adapter);
-//         self.device = Some(device);
-//         self.queue = Some(queue);
-//         Ok(())
-//     }
-// }

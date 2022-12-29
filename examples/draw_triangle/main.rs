@@ -1,26 +1,39 @@
-use std::{error::Error, path::Path};
+use std::path::Path;
 
 use nucley::*;
 
-fn main() -> Result<(), Box<dyn Error>> {
+pub fn main() {
+    //Create app and main window.
     let mut app = Nucley::new();
-    let mut window = app.create_window()?;
+    let window = app.create_window().expect("Error creating window.");
+
+    //Create brush to draw the shapes.
     let brush = Brush::from_path(
         window.view(),
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
-    )?;
+    )
+    .expect("Error creating brush.");
+
+    //Create a shape batch and add a triangle to it.
     let mut batch = ShapeBatch::default();
     batch.add_triangle([
         vertex!(-0.5, -0.5, 0.0, Color::SILVER),
         vertex!(0.5, -0.5, 0.0, Color::SILVER),
         vertex!(0.0, 0.5, 0.0, Color::SILVER),
     ]);
-    let buffer = batch.bake_buffers(window.view())?;
 
+    //Bake batches into GPU buffers.
+    let buffer = batch
+        .bake_buffers(window.view())
+        .expect("Error baking batch.");
+
+    //Setup the window render loop.
     window.run(move |wnd| {
         let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
         frame.render(&brush, &buffer);
         frame.finish(wnd).expect("Error finishing frame.");
     });
+
+    //Start program.
     app.start();
 }
