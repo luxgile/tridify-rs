@@ -1,18 +1,17 @@
-use std::path::Path;
+use std::{error::Error, path::Path};
 
 use nucley::*;
 
-pub fn main() {
+pub fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Nucley::new();
-    let window = app.create_window().expect("Error creating window.");
+    let window = app.create_window()?;
 
     //Create brush to draw the shapes.
     let brush = Brush::from_path(
         window.view(),
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
-    )
-    .expect("Error creating brush.");
+    )?;
 
     //Create a shape batch and add a triangle to it.
     let mut batch = ShapeBatch::default();
@@ -23,9 +22,7 @@ pub fn main() {
     ]);
 
     //Bake batches into GPU buffers.
-    let buffer = batch
-        .bake_buffers(window.view())
-        .expect("Error baking batch.");
+    let buffer = batch.bake_buffers(window.view())?;
 
     //Setup the window render loop.
     window.run(move |wnd| {
