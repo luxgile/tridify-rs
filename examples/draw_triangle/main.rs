@@ -20,6 +20,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         vertex!(0.5, -0.5, 0.0, Color::SILVER),
         vertex!(0.0, 0.5, 0.0, Color::SILVER),
     ]);
+    print!("Holy shit this might actually work??????");
 
     //Bake batches into GPU buffers.
     let buffer = batch.bake_buffers(window.view())?;
@@ -33,4 +34,5 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
     //Start program.
     app.start();
+    Ok(())
 }

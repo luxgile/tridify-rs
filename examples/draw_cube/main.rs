@@ -84,10 +84,50 @@
 //             &draw_params,
 //         );
 
+use std::path::Path;
+
+use nucley::*;
+use wgpu::Texture;
+
 //         //Finish drawing the frame
 //         canvas.finish_canvas()?;
 //         Ok(())
 //     }
 // }
 fn main() {
+    //Create app and main window.
+    let mut app = Nucley::new();
+    let window = app.create_window()?;
+
+    let texture = Texture::from_path(wnd, Path::new("examples/draw_cube/UV_1k.jpg"));
+    let binder = Binder::new(window.view());
+
+    //Create brush to draw the shapes.
+    let brush = Brush::from_path(
+        window.view(),
+        Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
+    )?;
+
+    brush.set_binder();
+
+    //Create a shape batch and add a triangle to it.
+    let mut batch = ShapeBatch::default();
+    batch.add_triangle([
+        vertex!(-0.5, -0.5, 0.0, Color::SILVER),
+        vertex!(0.5, -0.5, 0.0, Color::SILVER),
+        vertex!(0.0, 0.5, 0.0, Color::SILVER),
+    ]);
+
+    //Bake batches into GPU buffers.
+    let buffer = batch.bake_buffers(window.view())?;
+
+    //Setup the window render loop.
+    window.run(move |wnd| {
+        let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
+        frame.render(&brush, &buffer);
+        frame.finish(wnd).expect("Error finishing frame.");
+    });
+
+    // Start program.
+    app.start();
 }

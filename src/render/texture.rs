@@ -7,15 +7,15 @@
 // #[derive(Debug)]
 // pub struct TextureSettings {}
 
-use std::{num::NonZeroU32, path::Path};
+use std::{num::NonZeroU32, path::Path, rc::Rc};
 
 use glam::{UVec2, UVec3};
 use wgpu::{
     ImageCopyTexture, ImageDataLayout, TextureAspect, TextureDescriptor, TextureFormat,
-    TextureUsages,
+    TextureUsages, TextureView, TextureViewDescriptor,
 };
 
-use crate::{Color, Graphics};
+use crate::{Color, Graphics, ToBinder};
 
 bitflags::bitflags! {
 
@@ -88,11 +88,12 @@ impl TextureDesc {
 #[derive(Debug)]
 pub struct Texture {
     pub desc: TextureDesc,
-    texture: wgpu::Texture,
+    pub(crate) texture: wgpu::Texture,
+    pub(crate) view: wgpu::TextureView,
 }
 
 impl Texture {
-    pub fn new(graphis: &impl Graphics, desc: TextureDesc) -> Self {
+    pub fn new(graphis: &impl Graphics, desc: TextureDesc) -> Rc<Self> {
         let size = desc.size.get_size();
         let texture = graphis.get_device().create_texture(&TextureDescriptor {
             label: None,
@@ -107,9 +108,13 @@ impl Texture {
             format: TextureFormat::Rgba8UnormSrgb,
             usage: desc.get_wgpu_usage(),
         });
-        Self { desc, texture }
+        let view = texture.create_view(&TextureViewDescriptor::default());
+        Rc::new(Self {
+            desc,
+            texture,
+            view,
+        })
     }
-
     ///Writes data into the texture lazily, which means it won't be done until all GPU commands are sent.
     pub fn lazy_write_data(&mut self, graphics: &impl Graphics, pixels: &Vec<Color>) {
         let size = self.desc.size.get_size();
@@ -132,5 +137,11 @@ impl Texture {
                 depth_or_array_layers: size.z,
             },
         );
+    }
+}
+
+impl ToBinder for Rc<Texture> {
+    fn get_part(&self) -> crate::BinderPart {
+        crate::BinderPart::Texture(self.clone())
     }
 }
