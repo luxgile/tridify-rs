@@ -84,22 +84,21 @@
 //             &draw_params,
 //         );
 
-use std::path::Path;
+use std::{error::Error, path::Path};
 
 use nucley::*;
-use wgpu::Texture;
 
 //         //Finish drawing the frame
 //         canvas.finish_canvas()?;
 //         Ok(())
 //     }
 // }
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Nucley::new();
     let window = app.create_window()?;
 
-    let texture = Texture::from_path(wnd, Path::new("examples/draw_cube/UV_1k.jpg"));
+    let texture = Texture::from_path(window.view(), Path::new("examples/draw_cube/UV_1k.jpg"));
     let binder = Binder::new(window.view());
 
     //Create brush to draw the shapes.
