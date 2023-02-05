@@ -84,18 +84,27 @@
 //             &draw_params,
 //         );
 
+<<<<<<< HEAD
+=======
+use std::{error::Error, path::Path};
+
+use nucley::*;
+>>>>>>> 1e7ce10f09c6e40bc248f618e263f9a6a160a076
 
 //         //Finish drawing the frame
 //         canvas.finish_canvas()?;
 //         Ok(())
 //     }
 // }
+<<<<<<< HEAD
 
 
 use std::{path::Path, error::Error, cell::RefCell};
 
 use nucley::*;
 
+=======
+>>>>>>> 1e7ce10f09c6e40bc248f618e263f9a6a160a076
 fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Nucley::new();
@@ -103,6 +112,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let window_view = window.view();
     let mut db = Database::<Texture>::new();
 
+<<<<<<< HEAD
     //Load texture from path.
     let texture = Texture::from_path(window_view, Path::new("examples/draw_cube/UV_1k.jpg"));
     let texture_ref = db.add_asset(texture);
@@ -111,6 +121,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut binder = Binder::new();
     binder.set_bind(0, &BinderPart::Texture(texture_ref.clone()));
     binder.set_bind(1, &BinderPart::Sampler);
+=======
+    let texture = Texture::from_path(window.view(), Path::new("examples/draw_cube/UV_1k.jpg"));
+    let binder = Binder::new(window.view());
+>>>>>>> 1e7ce10f09c6e40bc248f618e263f9a6a160a076
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_path(
