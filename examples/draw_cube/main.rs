@@ -84,31 +84,41 @@
 //             &draw_params,
 //         );
 
-use std::path::Path;
-
-use nucley::*;
-use wgpu::Texture;
 
 //         //Finish drawing the frame
 //         canvas.finish_canvas()?;
 //         Ok(())
 //     }
 // }
-fn main() {
+
+
+use std::{path::Path, error::Error, cell::RefCell};
+
+use nucley::*;
+
+fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Nucley::new();
     let window = app.create_window()?;
+    let window_view = window.view();
+    let mut db = Database::<Texture>::new();
 
-    let texture = Texture::from_path(wnd, Path::new("examples/draw_cube/UV_1k.jpg"));
-    let binder = Binder::new(window.view());
+    //Load texture from path.
+    let texture = Texture::from_path(window_view, Path::new("examples/draw_cube/UV_1k.jpg"));
+    let texture_ref = db.add_asset(texture);
+
+    //Binder holds textures, matrices and other uniforms.
+    let mut binder = Binder::new();
+    binder.set_bind(0, &BinderPart::Texture(texture_ref.clone()));
+    binder.set_bind(1, &BinderPart::Sampler);
 
     //Create brush to draw the shapes.
-    let brush = Brush::from_path(
+    let mut brush = Brush::from_path(
         window.view(),
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
     )?;
-
-    brush.set_binder();
+    // Add binder information to the brush
+    brush.set_binder(0, binder);
 
     //Create a shape batch and add a triangle to it.
     let mut batch = ShapeBatch::default();
@@ -122,9 +132,10 @@ fn main() {
     let buffer = batch.bake_buffers(window.view())?;
 
     //Setup the window render loop.
+    // TODO: Add app to closure
     window.run(move |wnd| {
         let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
-        frame.render(&brush, &buffer);
+        frame.render(wnd, &mut brush, &buffer);
         frame.finish(wnd).expect("Error finishing frame.");
     });
 

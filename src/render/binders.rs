@@ -1,18 +1,24 @@
-use std::{collections::HashMap, error::Error, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    collections::HashMap,
+    error::Error,
+    rc::Rc,
+};
 
 use wgpu::{
-    BindGroup, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry, ShaderStages,
+    BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
+    ShaderStages,
 };
 
 use crate::{Graphics, Texture, TextureSize};
 
-use super::texture;
 
-pub enum BinderPart {
+#[derive(Clone)]
+pub enum BinderPart<'a> {
     Sampler,
-    Texture(Rc<Texture>),
+    Texture(&'a Texture),
 }
-impl BinderPart {
+impl<'a> BinderPart<'a> {
     fn to_layout(&self, index: u32) -> BindGroupLayoutEntry {
         match self {
             BinderPart::Sampler => BindGroupLayoutEntry {
@@ -43,30 +49,37 @@ impl BinderPart {
         }
     }
 }
+impl<'a> ToBinder for BinderPart<'a> {
+    fn get_part(&self) -> BinderPart<'a> {
+        self.clone()
+    }
+}
 
 pub trait ToBinder {
     fn get_part(&self) -> BinderPart;
 }
 
-pub struct Binder {
-    bind_group: Option<BindGroup>,
-    parts: HashMap<u32, BinderPart>,
+pub struct Binder<'a> {
+    pub bind_layout: Option<BindGroupLayout>,
+    pub bind_group: Option<BindGroup>,
+    parts: HashMap<u32, BinderPart<'a>>,
     needs_update: bool,
 }
-impl Binder {
-    pub fn new(graphics: &impl Graphics) -> Self {
+impl<'a> Binder<'a> {
+    pub fn new() -> Self {
         Self {
             needs_update: true,
             parts: HashMap::new(),
             bind_group: None,
+            bind_layout: None,
         }
     }
-    pub fn set_bind(&mut self, index: u32, bind_part: &impl ToBinder) {
+    pub fn set_bind(&mut self, index: u32, bind_part: &'a impl ToBinder) {
         let part = bind_part.get_part();
         self.parts.insert(index, part);
     }
 
-    pub fn requires_update(&self) -> bool {
+    pub fn needs_update(&self) -> bool {
         self.needs_update
     }
     pub fn update(&mut self, graphics: &impl Graphics) -> Result<(), Box<dyn Error>> {

@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     error::Error,
     future::Future,
-    time::{Duration, Instant},
+    time::{Duration, Instant}, cell::RefCell,
 };
 
 use env_logger::fmt::*;
@@ -17,12 +17,13 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{Color, Frame, Window, WindowView};
+use crate::{Color, Frame, Window, WindowView, Texture};
 
 pub struct Nucley {
     windows: HashMap<WindowId, Window>,
     wb: Option<EventLoop<()>>,
     wgpu: wgpu::Instance,
+    pub test: Option<RefCell<Texture>>,
 }
 impl Nucley {
     pub fn new() -> Self {
@@ -39,6 +40,7 @@ impl Nucley {
             wgpu: wgpu::Instance::new(Backends::all()),
             wb: Some(EventLoop::new()),
             windows: HashMap::new(),
+            test: None
         }
     }
 

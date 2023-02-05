@@ -1,5 +1,6 @@
 use std::{error::Error, path::Path};
 
+
 use nucley::*;
 
 pub fn main() -> Result<(), Box<dyn Error>> {
@@ -8,7 +9,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let window = app.create_window()?;
 
     //Create brush to draw the shapes.
-    let brush = Brush::from_path(
+    let mut brush = Brush::from_path(
         window.view(),
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
     )?;
@@ -20,19 +21,18 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         vertex!(0.5, -0.5, 0.0, Color::SILVER),
         vertex!(0.0, 0.5, 0.0, Color::SILVER),
     ]);
-    print!("Holy shit this might actually work??????");
-
+   
     //Bake batches into GPU buffers.
     let buffer = batch.bake_buffers(window.view())?;
 
     //Setup the window render loop.
     window.run(move |wnd| {
+let wnddd =        app.create_window();
         let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
-        frame.render(&brush, &buffer);
+        frame.render(wnd, &mut brush, &buffer);
         frame.finish(wnd).expect("Error finishing frame.");
     });
 
     //Start program.
     app.start();
-    Ok(())
 }

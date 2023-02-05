@@ -53,7 +53,7 @@ impl Frame {
     }
 
     ///Draw batch on the canvas.
-    pub fn render(&mut self, brush: &Brush, buffer: &ShapeBuffer) {
+    pub fn render(&mut self, graphics: &impl Graphics, brush: &mut Brush, buffer: &ShapeBuffer) {
         let mut pass = self.encoder.begin_render_pass(&RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(RenderPassColorAttachment {
@@ -72,12 +72,25 @@ impl Frame {
             depth_stencil_attachment: None,
         });
 
-        pass.set_pipeline(&brush.pipeline);
-        //TODO: pass.set_bind_group(0, &, offsets)
+        if brush.needs_update() {
+            brush.update(graphics);
+        }
+
+        let pipeline = &brush
+            .cached_pipeline
+            .as_ref()
+            .expect("Brush does not have a pipeline.");
+        pass.set_pipeline(pipeline);
+
+        for binder in brush.binders.iter() {
+            pass.set_bind_group(binder.0, binder.1.bind_group.as_ref().unwrap(), &[]);
+        }
+
         pass.set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
         pass.set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         pass.draw_indexed(0..buffer.index_len, 0, 0..1);
     }
+
     ///Finishes frame drawing.
     pub fn finish(mut self, graphics: &impl Graphics) -> Result<(), &'static str> {
         let queue = graphics.get_queue();

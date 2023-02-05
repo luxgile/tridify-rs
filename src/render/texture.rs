@@ -7,15 +7,21 @@
 // #[derive(Debug)]
 // pub struct TextureSettings {}
 
-use std::{num::NonZeroU32, path::Path, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    num::NonZeroU32,
+    path::Path,
+    rc::Rc,
+};
 
 use glam::{UVec2, UVec3};
+use image::GenericImageView;
 use wgpu::{
     ImageCopyTexture, ImageDataLayout, TextureAspect, TextureDescriptor, TextureFormat,
     TextureUsages, TextureView, TextureViewDescriptor,
 };
 
-use crate::{Color, Graphics, ToBinder};
+use crate::{  Color,  Graphics, ToBinder, Asset};
 
 bitflags::bitflags! {
 
@@ -93,9 +99,20 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn new(graphis: &impl Graphics, desc: TextureDesc) -> Rc<Self> {
+    pub fn from_path(graphics: &impl Graphics, path: &Path) -> Self {
+        let image = image::open(path).expect("Error loading image.");
+        let desc = TextureDesc {
+            size: TextureSize::D2(UVec2::new(image.width(), image.height())),
+            usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
+        };
+        let mut texture = Self::new(graphics, desc);
+        texture.lazy_write_data(graphics, &image.to_rgba8());
+        texture
+    }
+
+    pub fn new(graphics: &impl Graphics, desc: TextureDesc) -> Self {
         let size = desc.size.get_size();
-        let texture = graphis.get_device().create_texture(&TextureDescriptor {
+        let texture = graphics.get_device().create_texture(&TextureDescriptor {
             label: None,
             size: wgpu::Extent3d {
                 width: size.x,
@@ -109,14 +126,15 @@ impl Texture {
             usage: desc.get_wgpu_usage(),
         });
         let view = texture.create_view(&TextureViewDescriptor::default());
-        Rc::new(Self {
+        Self {
             desc,
             texture,
             view,
-        })
+        }
     }
+
     ///Writes data into the texture lazily, which means it won't be done until all GPU commands are sent.
-    pub fn lazy_write_data(&mut self, graphics: &impl Graphics, pixels: &Vec<Color>) {
+    pub fn lazy_write_data(&mut self, graphics: &impl Graphics, data: &[u8]) {
         let size = self.desc.size.get_size();
         graphics.get_queue().write_texture(
             ImageCopyTexture {
@@ -125,7 +143,7 @@ impl Texture {
                 origin: wgpu::Origin3d::ZERO,
                 aspect: TextureAspect::All,
             },
-            bytemuck::cast_slice(&pixels),
+            data,
             ImageDataLayout {
                 offset: 0,
                 bytes_per_row: NonZeroU32::new(size.x * 4),
@@ -140,8 +158,14 @@ impl Texture {
     }
 }
 
-impl ToBinder for Rc<Texture> {
+impl ToBinder for Texture {
     fn get_part(&self) -> crate::BinderPart {
-        crate::BinderPart::Texture(self.clone())
+        crate::BinderPart::Texture(self)
+    }
+}
+
+impl Asset for Texture {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }

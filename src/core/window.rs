@@ -10,20 +10,20 @@ use winit::{
     event_loop::ControlFlow,
 };
 
-use crate::Graphics;
+use crate::{Graphics, Nucley};
 use crate::{Color, Frame, RenderOptions};
 
 pub struct Window {
     pub(crate) wnd: WindowView,
-    pub(crate) user_loop: Option<Box<dyn Fn(&mut WindowView)>>,
+    pub(crate) user_loop: Option<Box<dyn FnMut(&mut WindowView)>>,
 }
 impl Window {
     pub fn update(&mut self) {
-        if let Some(user_loop) = self.user_loop.as_ref() {
-            user_loop.as_ref()(&mut self.wnd);
+        if let Some(user_loop) = self.user_loop.as_mut() {
+            user_loop.as_mut()(&mut self.wnd);
         }
     }
-    pub fn run(&mut self, func: impl Fn(&mut WindowView) + 'static) {
+    pub fn run(&mut self, func: impl FnMut( &mut WindowView) + 'static) {
         self.user_loop = Some(Box::new(func));
     }
 
