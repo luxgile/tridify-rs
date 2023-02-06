@@ -1,9 +1,8 @@
 use std::{error::Error, path::Path};
 
-
 use nucley::*;
-
 pub fn main() -> Result<(), Box<dyn Error>> {
+
     //Create app and main window.
     let mut app = Nucley::new();
     let window = app.create_window()?;
@@ -21,18 +20,17 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         vertex!(0.5, -0.5, 0.0, Color::SILVER),
         vertex!(0.0, 0.5, 0.0, Color::SILVER),
     ]);
-   
+
     //Bake batches into GPU buffers.
     let buffer = batch.bake_buffers(window.view())?;
 
     //Setup the window render loop.
     window.run(move |wnd| {
-let wnddd =        app.create_window();
         let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
         frame.render(wnd, &mut brush, &buffer);
         frame.finish(wnd).expect("Error finishing frame.");
     });
 
     //Start program.
-    app.start();
+    app.start(());
 }

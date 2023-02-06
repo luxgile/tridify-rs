@@ -19,6 +19,10 @@ use winit::{
 
 use crate::{Color, Frame, Window, WindowView, Texture};
 
+pub struct AppCtx<'a, T> {
+    //event loop
+    user_ctx: &'a T,
+}
 pub struct Nucley {
     windows: HashMap<WindowId, Window>,
     wb: Option<EventLoop<()>>,
@@ -110,7 +114,7 @@ impl Nucley {
         let window = self.windows.get_mut(&wnd_id).unwrap();
         Ok(window)
     }
-    pub fn start(mut self) -> ! {
+    pub fn start<T: 'static>(mut self, user_ctx: T) -> ! {
         let event_loop = self.wb.take().unwrap();
         event_loop.run(move |event, eloop, flow| match event {
             Event::WindowEvent {
@@ -131,6 +135,9 @@ impl Nucley {
             },
             Event::RedrawRequested(id) => {
                 let wnd = self.get_window_mut(&id).unwrap();
+                let app_ctx = AppCtx {
+                    user_ctx: &user_ctx,
+                };
                 wnd.update();
             }
             _ => {}

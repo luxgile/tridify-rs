@@ -84,59 +84,34 @@
 //             &draw_params,
 //         );
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-use std::{error::Error, path::Path};
 
 use nucley::*;
->>>>>>> 1e7ce10f09c6e40bc248f618e263f9a6a160a076
-=======
-use std::{error::Error, path::Path};
 
-use nucley::*;
->>>>>>> 1e7ce10f09c6e40bc248f618e263f9a6a160a076
 
 //         //Finish drawing the frame
 //         canvas.finish_canvas()?;
 //         Ok(())
 //     }
 // }
-<<<<<<< HEAD
-<<<<<<< HEAD
 
 
-use std::{path::Path, error::Error, cell::RefCell};
+use std::{path::Path, error::Error};
 
-use nucley::*;
 
-=======
->>>>>>> 1e7ce10f09c6e40bc248f618e263f9a6a160a076
-=======
->>>>>>> 1e7ce10f09c6e40bc248f618e263f9a6a160a076
 fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Nucley::new();
     let window = app.create_window()?;
     let window_view = window.view();
-    let mut db = Database::<Texture>::new();
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     //Load texture from path.
     let texture = Texture::from_path(window_view, Path::new("examples/draw_cube/UV_1k.jpg"));
-    let texture_ref = db.add_asset(texture);
+    let sampler = Sampler::new_default(window_view);
 
     //Binder holds textures, matrices and other uniforms.
     let mut binder = Binder::new();
-    binder.set_bind(0, &BinderPart::Texture(texture_ref.clone()));
-    binder.set_bind(1, &BinderPart::Sampler);
-=======
-=======
->>>>>>> 1e7ce10f09c6e40bc248f618e263f9a6a160a076
-    let texture = Texture::from_path(window.view(), Path::new("examples/draw_cube/UV_1k.jpg"));
-    let binder = Binder::new(window.view());
->>>>>>> 1e7ce10f09c6e40bc248f618e263f9a6a160a076
+    binder.bind(0, &texture);
+    binder.bind(1, &sampler);
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_path(
@@ -166,5 +141,5 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     // Start program.
-    app.start();
+    app.start(());
 }

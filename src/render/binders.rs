@@ -13,93 +13,86 @@ use wgpu::{
 use crate::{Graphics, Texture, TextureSize};
 
 
-#[derive(Clone)]
-pub enum BinderPart<'a> {
-    Sampler,
-    Texture(&'a Texture),
-}
-impl<'a> BinderPart<'a> {
-    fn to_layout(&self, index: u32) -> BindGroupLayoutEntry {
-        match self {
-            BinderPart::Sampler => BindGroupLayoutEntry {
-                binding: index,
-                visibility: ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                count: None,
-            },
-            BinderPart::Texture(texture) => BindGroupLayoutEntry {
-                binding: index,
-                visibility: ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    view_dimension: texture.desc.size.get_wgpu_view_dimension(),
-                    multisampled: false,
-                },
-                count: None,
-            },
-        }
-    }
-    fn to_entry(&self) -> BindGroupEntry {
-        match self {
-            BinderPart::Sampler => todo!(),
-            BinderPart::Texture(texture) => wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&texture.view),
-            },
-        }
-    }
-}
-impl<'a> ToBinder for BinderPart<'a> {
-    fn get_part(&self) -> BinderPart<'a> {
-        self.clone()
-    }
-}
+// #[derive(Clone)]
+// pub enum BinderPart<'a> {
+//     Sampler,
+//     Texture(&'a Texture),
+// }
+// impl<'a> BinderPart<'a> {
+//     fn to_layout(&self, index: u32) -> BindGroupLayoutEntry {
+//         match self {
+//             BinderPart::Sampler => BindGroupLayoutEntry {
+//                 binding: index,
+//                 visibility: ShaderStages::FRAGMENT,
+//                 ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+//                 count: None,
+//             },
+//             BinderPart::Texture(texture) => BindGroupLayoutEntry {
+//                 binding: index,
+//                 visibility: ShaderStages::FRAGMENT,
+//                 ty: wgpu::BindingType::Texture {
+//                     sample_type: wgpu::TextureSampleType::Float { filterable: true },
+//                     view_dimension: texture.desc.size.get_wgpu_view_dimension(),
+//                     multisampled: false,
+//                 },
+//                 count: None,
+//             },
+//         }
+//     }
+//     fn to_entry(&self) -> BindGroupEntry {
+//         match self {
+//             BinderPart::Sampler => todo!(),
+//             BinderPart::Texture(texture) => wgpu::BindGroupEntry {
+//                 binding: 0,
+//                 resource: wgpu::BindingResource::TextureView(&texture.view),
+//             },
+//         }
+//     }
+// }
 
 pub trait ToBinder {
-    fn get_part(&self) -> BinderPart;
+    fn get_layout(&self, index: u32) -> BindGroupLayoutEntry;
+    fn get_group(&self, index: u32) -> BindGroupEntry;
 }
 
 pub struct Binder<'a> {
     pub bind_layout: Option<BindGroupLayout>,
     pub bind_group: Option<BindGroup>,
-    parts: HashMap<u32, BinderPart<'a>>,
+    layout_parts: HashMap<u32, BindGroupLayoutEntry>,
+    entry_parts: HashMap<u32, BindGroupEntry<'a>>,
     needs_update: bool,
 }
 impl<'a> Binder<'a> {
     pub fn new() -> Self {
         Self {
             needs_update: true,
-            parts: HashMap::new(),
             bind_group: None,
             bind_layout: None,
+            layout_parts: HashMap::new(),
+            entry_parts: HashMap::new(),
         }
     }
-    pub fn set_bind(&mut self, index: u32, bind_part: &'a impl ToBinder) {
-        let part = bind_part.get_part();
-        self.parts.insert(index, part);
+    pub fn bind(&mut self, index: u32, bind_part: &'a impl ToBinder) {
+        self.layout_parts.insert(index, bind_part.get_layout(index));
+        self.entry_parts.insert(index, bind_part.get_group(index));
+        self.needs_update = true;
     }
 
     pub fn needs_update(&self) -> bool {
         self.needs_update
     }
     pub fn update(&mut self, graphics: &impl Graphics) -> Result<(), Box<dyn Error>> {
-        let mut layout_entries = Vec::new();
-        let mut wgpu_entries = Vec::new();
-        for (i, part) in self.parts.iter().enumerate() {
-            layout_entries.push(part.1.to_layout(i as u32));
-            wgpu_entries.push(part.1.to_entry());
-        }
-        let layout = graphics
+        self.bind_layout = Some(graphics
             .get_device()
             .create_bind_group_layout(&BindGroupLayoutDescriptor {
                 label: None,
-                entries: &layout_entries,
-            });
+                entries: &self.layout_parts.values().cloned().collect::<Vec<_>>(),
+            }));
 
         self.bind_group = Some(graphics.get_device().create_bind_group(
             &wgpu::BindGroupDescriptor {
-                layout: &layout,
-                entries: &wgpu_entries,
+                layout: &self.bind_layout.as_ref().unwrap(),
+                entries: &self.entry_parts.values().cloned().collect::<Vec<_>>(),
                 label: None,
             },
         ));

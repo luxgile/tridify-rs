@@ -17,11 +17,11 @@ use std::{
 use glam::{UVec2, UVec3};
 use image::GenericImageView;
 use wgpu::{
-    ImageCopyTexture, ImageDataLayout, TextureAspect, TextureDescriptor, TextureFormat,
-    TextureUsages, TextureView, TextureViewDescriptor,
+    ImageCopyTexture, ImageDataLayout, ShaderStages, TextureAspect, TextureDescriptor,
+    TextureFormat, TextureUsages, TextureView, TextureViewDescriptor,
 };
 
-use crate::{  Color,  Graphics, ToBinder, Asset};
+use crate::{Asset, Color, Graphics, ToBinder};
 
 bitflags::bitflags! {
 
@@ -159,11 +159,27 @@ impl Texture {
 }
 
 impl ToBinder for Texture {
-    fn get_part(&self) -> crate::BinderPart {
-        crate::BinderPart::Texture(self)
+    fn get_layout(&self, index: u32) -> wgpu::BindGroupLayoutEntry {
+        wgpu::BindGroupLayoutEntry {
+            binding: index,
+            visibility: ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: self.desc.size.get_wgpu_view_dimension(),
+                multisampled: false,
+            },
+            count: None,
+        }
+    }
+
+    fn get_group(&self, index: u32) -> wgpu::BindGroupEntry {
+        wgpu::BindGroupEntry {
+            binding: index,
+            resource: wgpu::BindingResource::TextureView(&self.view),
+        }
     }
 }
-
+ 
 impl Asset for Texture {
     fn as_any(&self) -> &dyn std::any::Any {
         self
