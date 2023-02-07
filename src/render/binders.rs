@@ -50,7 +50,7 @@ use crate::{Graphics, Texture, TextureSize};
 //     }
 // }
 
-pub trait ToBinder {
+pub trait ToBinder  {
     fn get_layout(&self, index: u32) -> BindGroupLayoutEntry;
     fn get_group(&self, index: u32) -> BindGroupEntry;
 }

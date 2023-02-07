@@ -82,9 +82,9 @@ impl Frame {
             .expect("Brush does not have a pipeline.");
         pass.set_pipeline(pipeline);
 
-        for binder in brush.binders.iter() {
-            pass.set_bind_group(binder.0, binder.1.bind_group.as_ref().unwrap(), &[]);
-        }
+        // for binder in brush.binders.iter() {
+        //     pass.set_bind_group(binder.0, binder.1.bind_group.as_ref().unwrap(), &[]);
+        // }
 
         pass.set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
         pass.set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);

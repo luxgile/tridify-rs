@@ -6,28 +6,31 @@
 
 // use super::{Uniform, UniformBuffer};
 
-use std::{borrow::Cow, error::Error, fs::File, io::Read, path::Path};
+use std::{
+    borrow::Cow, cell::RefCell, collections::HashMap, error::Error, fs::File, io::Read, path::Path,
+    rc::Rc,
+};
 
 use wgpu::{
     BindGroup, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState,
     RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, VertexState,
 };
 
-use crate::{Binder, Vertex, WindowView};
+use crate::{AssetRef, Binder, ToBinder, Vertex, WindowView};
 
 use super::Graphics;
 
 // //TODO: PIPELINE GOES HERE
 // ///Used to tell the GPU how to draw the shapes provided.
 // #[derive(Debug)]
-pub struct Brush<'a> {
+pub struct Brush {
     pub shader: ShaderModule,
     pub cached_pipeline: Option<RenderPipeline>,
-    pub binders: Vec<(u32, Binder<'a>)>,
+    assets_to_bind: HashMap<u32, HashMap<u32, AssetRef<dyn ToBinder>>>,
     needs_update: bool,
 }
 
-impl<'a> Brush<'a> {
+impl Brush {
     pub fn from_path(graphics: &impl Graphics, shader_path: &Path) -> Result<Self, Box<dyn Error>> {
         let mut source = String::new();
         File::open(shader_path)?.read_to_string(&mut source)?;
@@ -44,41 +47,35 @@ impl<'a> Brush<'a> {
         });
         Ok(Self {
             shader,
+            assets_to_bind: HashMap::new(),
             cached_pipeline: None,
-            binders: Vec::new(),
             needs_update: true,
         })
     }
 
-    pub fn set_binder(&mut self, group_index: u32, binder: Binder<'a>) {
-        let replace = self.binders.iter().position(|x| x.0 == group_index);
-        if let Some(index) = replace {
-            self.binders.remove(index);
-            self.binders.insert(index, (group_index, binder));
-        } else {
-            self.binders.push((group_index, binder));
+    pub fn bind(&mut self, group_index: u32, loc_index: u32, asset: AssetRef<dyn ToBinder>) {
+        if let Some(map) = self.assets_to_bind.get_mut(&group_index) {
+            map.insert(loc_index, asset);
         }
         self.needs_update = true;
     }
 
-    pub fn needs_update(&self) -> bool {
-        self.needs_update
-    }
+    pub fn needs_update(&self) -> bool { self.needs_update }
 
     pub fn update(&mut self, graphics: &impl Graphics) {
         let device = graphics.get_device();
         let mut bind_layouts = Vec::new();
-        for binder in self.binders.iter_mut() {
-            if binder.1.needs_update() {
-                binder
-                    .1
-                    .update(graphics)
-                    .expect("Error while updating binder in brush");
-            }
-            if let Some(layout) = binder.1.bind_layout.as_ref() {
-                bind_layouts.push(layout);
-            }
-        }
+        // for binder in self.binders.iter_mut() {
+        //     if binder.1.needs_update() {
+        //         binder
+        //             .1
+        //             .update(graphics)
+        //             .expect("Error while updating binder in brush");
+        //     }
+        //     if let Some(layout) = binder.1.bind_layout.as_ref() {
+        //         bind_layouts.push(layout);
+        //     }
+        // }
         let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &bind_layouts,

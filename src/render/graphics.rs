@@ -1,8 +1,9 @@
 use std::{
+    cell::RefCell,
     collections::HashMap,
     error::Error,
     future::Future,
-    time::{Duration, Instant}, cell::RefCell,
+    time::{Duration, Instant},
 };
 
 use env_logger::fmt::*;
@@ -17,7 +18,7 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{Color, Frame, Window, WindowView, Texture};
+use crate::{Color, Frame, Texture, Window, WindowView};
 
 pub struct AppCtx<'a, T> {
     //event loop
@@ -33,7 +34,7 @@ impl Nucley {
     pub fn new() -> Self {
         cfg_if::cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
-                std::panic::set_hook(Box::new(console_error_panic_hook::hook))
+                std::panic::set_hook(Box::new(console_error_panic_hook::hook));
                 console_log::init_with_level(log::Level::Warn).expect("Couldn't initialize logger");
             } else {
                 env_logger::init();
@@ -44,7 +45,7 @@ impl Nucley {
             wgpu: wgpu::Instance::new(Backends::all()),
             wb: Some(EventLoop::new()),
             windows: HashMap::new(),
-            test: None
+            test: None,
         }
     }
 

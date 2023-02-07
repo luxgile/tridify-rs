@@ -1,3 +1,6 @@
+#![feature(coerce_unsized)]
+#![feature(unsize)]
+
 mod core;
 mod render;
 use std::path::Path;

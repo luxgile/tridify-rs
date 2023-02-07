@@ -84,9 +84,7 @@
 //             &draw_params,
 //         );
 
-
 use nucley::*;
-
 
 //         //Finish drawing the frame
 //         canvas.finish_canvas()?;
@@ -94,9 +92,7 @@ use nucley::*;
 //     }
 // }
 
-
-use std::{path::Path, error::Error};
-
+use std::{cell::RefCell, error::Error, path::Path, rc::Rc};
 
 fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
@@ -105,13 +101,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let window_view = window.view();
 
     //Load texture from path.
-    let texture = Texture::from_path(window_view, Path::new("examples/draw_cube/UV_1k.jpg"));
-    let sampler = Sampler::new_default(window_view);
+    let texture = AssetRef::new(Texture::from_path(
+        window_view,
+        Path::new("examples/draw_cube/UV_1k.jpg"),
+    ));
+    let sampler =  AssetRef::new(Sampler::new_default(window_view));
 
     //Binder holds textures, matrices and other uniforms.
-    let mut binder = Binder::new();
-    binder.bind(0, &texture);
-    binder.bind(1, &sampler);
+    // let mut binder = Binder::new();
+    // binder.bind(0, &texture);
+    // binder.bind(1, &sampler);
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_path(
@@ -119,7 +118,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
     )?;
     // Add binder information to the brush
-    brush.set_binder(0, binder);
+    brush.bind(0, 0, texture);
+    brush.bind(0, 1, sampler);
 
     //Create a shape batch and add a triangle to it.
     let mut batch = ShapeBatch::default();
@@ -133,8 +133,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let buffer = batch.bake_buffers(window.view())?;
 
     //Setup the window render loop.
-    // TODO: Add app to closure
     window.run(move |wnd| {
+        //TODO: Add binder into brush and fill binder every frame needed.
         let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
         frame.render(wnd, &mut brush, &buffer);
         frame.finish(wnd).expect("Error finishing frame.");

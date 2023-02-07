@@ -21,7 +21,7 @@ use wgpu::{
     TextureFormat, TextureUsages, TextureView, TextureViewDescriptor,
 };
 
-use crate::{Asset, Color, Graphics, ToBinder};
+use crate::{Color, Graphics, ToBinder};
 
 bitflags::bitflags! {
 
@@ -180,8 +180,8 @@ impl ToBinder for Texture {
     }
 }
  
-impl Asset for Texture {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-}
+// impl Asset for Texture {
+//     fn as_any(&self) -> &dyn std::any::Any {
+//         self
+//     }
+// }
