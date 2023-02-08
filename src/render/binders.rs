@@ -1,4 +1,5 @@
 use std::{
+    borrow::Borrow,
     cell::{Cell, RefCell},
     collections::HashMap,
     error::Error,
@@ -10,8 +11,7 @@ use wgpu::{
     ShaderStages,
 };
 
-use crate::{Graphics, Texture, TextureSize};
-
+use crate::{AssetRef, Graphics, Texture, TextureSize};
 
 // #[derive(Clone)]
 // pub enum BinderPart<'a> {
@@ -50,53 +50,52 @@ use crate::{Graphics, Texture, TextureSize};
 //     }
 // }
 
-pub trait ToBinder  {
+pub trait ToBinder {
     fn get_layout(&self, index: u32) -> BindGroupLayoutEntry;
     fn get_group(&self, index: u32) -> BindGroupEntry;
 }
 
-pub struct Binder<'a> {
-    pub bind_layout: Option<BindGroupLayout>,
-    pub bind_group: Option<BindGroup>,
-    layout_parts: HashMap<u32, BindGroupLayoutEntry>,
-    entry_parts: HashMap<u32, BindGroupEntry<'a>>,
-    needs_update: bool,
+pub struct Binder {
+    bindings: HashMap<u32, Rc<RefCell<dyn ToBinder>>>,
 }
-impl<'a> Binder<'a> {
+impl Binder {
     pub fn new() -> Self {
         Self {
-            needs_update: true,
-            bind_group: None,
-            bind_layout: None,
-            layout_parts: HashMap::new(),
-            entry_parts: HashMap::new(),
+            bindings: HashMap::new(),
         }
     }
-    pub fn bind(&mut self, index: u32, bind_part: &'a impl ToBinder) {
-        self.layout_parts.insert(index, bind_part.get_layout(index));
-        self.entry_parts.insert(index, bind_part.get_group(index));
-        self.needs_update = true;
+    pub fn bind(&mut self, index: u32, binding: Rc<RefCell<dyn ToBinder>>) {
+        self.bindings.insert(index, binding);
     }
 
-    pub fn needs_update(&self) -> bool {
-        self.needs_update
-    }
-    pub fn update(&mut self, graphics: &impl Graphics) -> Result<(), Box<dyn Error>> {
-        self.bind_layout = Some(graphics
+    pub fn bake<'a>(&'a self, graphics: &impl Graphics) -> (BindGroupLayout, BindGroup) {
+        let layout_entries = self
+            .bindings
+            .iter()
+            .map(|(id, to_bind)| to_bind.as_ref().borrow().get_layout(*id))
+            .collect::<Vec<_>>();
+        let mut bind_entries = Vec::new();
+        for (i, bind) in self.bindings.iter() {
+            let cell = bind.as_ref();
+            let borrowed_tobind = cell.borrow();
+            bind_entries.push((*i, borrowed_tobind));
+        }
+
+        let bgl = graphics
             .get_device()
             .create_bind_group_layout(&BindGroupLayoutDescriptor {
                 label: None,
-                entries: &self.layout_parts.values().cloned().collect::<Vec<_>>(),
-            }));
+                entries: &layout_entries,
+            });
 
-        self.bind_group = Some(graphics.get_device().create_bind_group(
-            &wgpu::BindGroupDescriptor {
-                layout: &self.bind_layout.as_ref().unwrap(),
-                entries: &self.entry_parts.values().cloned().collect::<Vec<_>>(),
+        let bg = graphics
+            .get_device()
+            .create_bind_group(&wgpu::BindGroupDescriptor {
+                layout: &bgl,
+                entries: &bind_entries.iter().map(|(i, x)| x.get_group(*i)).collect::<Vec<_>>(),
                 label: None,
-            },
-        ));
+            });
 
-        Ok(())
+        (bgl, bg)
     }
 }

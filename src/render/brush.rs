@@ -13,7 +13,8 @@ use std::{
 
 use wgpu::{
     BindGroup, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState,
-    RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, VertexState,
+    RenderPass, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor,
+    VertexState,
 };
 
 use crate::{AssetRef, Binder, ToBinder, Vertex, WindowView};
@@ -24,9 +25,10 @@ use super::Graphics;
 // ///Used to tell the GPU how to draw the shapes provided.
 // #[derive(Debug)]
 pub struct Brush {
-    pub shader: ShaderModule,
-    pub cached_pipeline: Option<RenderPipeline>,
-    assets_to_bind: HashMap<u32, HashMap<u32, AssetRef<dyn ToBinder>>>,
+    compiled_shader: ShaderModule,
+    cached_pipeline: Option<RenderPipeline>,
+    cached_bindings: Vec<(u32, BindGroup)>,
+    assets_to_bind: HashMap<u32, Binder>,
     needs_update: bool,
 }
 
@@ -46,16 +48,21 @@ impl Brush {
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(shader_source.as_str())),
         });
         Ok(Self {
-            shader,
+            compiled_shader: shader,
             assets_to_bind: HashMap::new(),
+            cached_bindings: Vec::new(),
             cached_pipeline: None,
             needs_update: true,
         })
     }
 
-    pub fn bind(&mut self, group_index: u32, loc_index: u32, asset: AssetRef<dyn ToBinder>) {
-        if let Some(map) = self.assets_to_bind.get_mut(&group_index) {
-            map.insert(loc_index, asset);
+    pub fn bind(&mut self, group_index: u32, loc_index: u32, asset: Rc<RefCell<dyn ToBinder>>) {
+        if let Some(binder) = self.assets_to_bind.get_mut(&group_index) {
+            binder.bind(loc_index, asset);
+        } else {
+            let mut binder = Binder::new();
+            binder.bind(loc_index, asset);
+            self.assets_to_bind.insert(group_index, binder);
         }
         self.needs_update = true;
     }
@@ -64,33 +71,28 @@ impl Brush {
 
     pub fn update(&mut self, graphics: &impl Graphics) {
         let device = graphics.get_device();
-        let mut bind_layouts = Vec::new();
-        // for binder in self.binders.iter_mut() {
-        //     if binder.1.needs_update() {
-        //         binder
-        //             .1
-        //             .update(graphics)
-        //             .expect("Error while updating binder in brush");
-        //     }
-        //     if let Some(layout) = binder.1.bind_layout.as_ref() {
-        //         bind_layouts.push(layout);
-        //     }
-        // }
+        self.cached_bindings.clear();
+        let mut bgls = Vec::new();
+        for (i, binder) in self.assets_to_bind.iter() {
+            let (bgl, bg) = binder.bake(graphics);
+            bgls.push(bgl);
+            self.cached_bindings.push((*i, bg));
+        }
         let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: None,
-            bind_group_layouts: &bind_layouts,
+            bind_group_layouts: &bgls.iter().map(|x| x).collect::<Vec<_>>(),
             push_constant_ranges: &[],
         });
         let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
             label: None,
             layout: Some(&pipeline_layout),
             vertex: VertexState {
-                module: &self.shader,
+                module: &self.compiled_shader,
                 entry_point: "vs_main",
                 buffers: &[Vertex::DESC],
             },
             fragment: Some(FragmentState {
-                module: &self.shader,
+                module: &self.compiled_shader,
                 entry_point: "fs_main",
                 targets: &[Some(
                     graphics
@@ -113,7 +115,12 @@ impl Brush {
             multiview: None,
         });
         self.cached_pipeline = Some(pipeline);
+        self.needs_update = false;
     }
+
+    pub fn get_pipeline(&self) -> &RenderPipeline { self.cached_pipeline.as_ref().unwrap() }
+
+    pub fn get_bind_groups(&self) -> &Vec<(u32, BindGroup)> { &self.cached_bindings }
 
     // ///Adds a uniform to the brush. Returns error if the uniform already exists.
     // pub fn add_uniform(&mut self, uniform: Uniform) -> Result<(), LErr> {

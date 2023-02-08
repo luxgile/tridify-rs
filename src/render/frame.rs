@@ -76,15 +76,11 @@ impl Frame {
             brush.update(graphics);
         }
 
-        let pipeline = &brush
-            .cached_pipeline
-            .as_ref()
-            .expect("Brush does not have a pipeline.");
+        let pipeline = brush.get_pipeline();
         pass.set_pipeline(pipeline);
+        let bind_groups = brush.get_bind_groups();
+        bind_groups.iter().for_each(|(id, bg)| pass.set_bind_group(*id, bg, &[]));
 
-        // for binder in brush.binders.iter() {
-        //     pass.set_bind_group(binder.0, binder.1.bind_group.as_ref().unwrap(), &[]);
-        // }
 
         pass.set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
         pass.set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);

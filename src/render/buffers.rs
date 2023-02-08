@@ -124,8 +124,8 @@ impl ShapeBatch {
         //Adding indices
         let index = self.index_id_counter;
         self.indices.push(index);
-        self.indices.push(index + 1);
         self.indices.push(index + 2);
+        self.indices.push(index + 1);
         self.indices.push(index + 2);
         self.indices.push(index + 1);
         self.indices.push(index + 3);

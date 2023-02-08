@@ -84,6 +84,7 @@
 //             &draw_params,
 //         );
 
+use glam::{Quat, Vec3};
 use nucley::*;
 
 //         //Finish drawing the frame
@@ -103,31 +104,32 @@ fn main() -> Result<(), Box<dyn Error>> {
     //Load texture from path.
     let texture = AssetRef::new(Texture::from_path(
         window_view,
-        Path::new("examples/draw_cube/UV_1k.jpg"),
+        Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\draw_cube\UV_1k.jpg"#),
     ));
-    let sampler =  AssetRef::new(Sampler::new_default(window_view));
 
-    //Binder holds textures, matrices and other uniforms.
-    // let mut binder = Binder::new();
-    // binder.bind(0, &texture);
-    // binder.bind(1, &sampler);
+    //Sampler defines how the texture will be rendered in shapes.
+    let sampler = AssetRef::new(Sampler::new_default(window_view));
+
+    // let camera = [];
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_path(
         window.view(),
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
     )?;
-    // Add binder information to the brush
-    brush.bind(0, 0, texture);
-    brush.bind(0, 1, sampler);
+    // Bind sampler and texture to the brush. Make sure group_index and loc_index are the same as
+    // in the shader.
+    brush.bind(1, 0, texture);
+    brush.bind(1, 1, sampler);
 
     //Create a shape batch and add a triangle to it.
     let mut batch = ShapeBatch::default();
-    batch.add_triangle([
-        vertex!(-0.5, -0.5, 0.0, Color::SILVER),
-        vertex!(0.5, -0.5, 0.0, Color::SILVER),
-        vertex!(0.0, 0.5, 0.0, Color::SILVER),
-    ]);
+    batch.add_cube(
+        Vec3::ZERO,
+        Quat::from_rotation_x(35.) * Quat::from_rotation_y(35.),
+        Vec3::ONE * 5.,
+        Color::WHITE,
+    );
 
     //Bake batches into GPU buffers.
     let buffer = batch.bake_buffers(window.view())?;

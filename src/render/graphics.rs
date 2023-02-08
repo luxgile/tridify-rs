@@ -136,9 +136,9 @@ impl Nucley {
             },
             Event::RedrawRequested(id) => {
                 let wnd = self.get_window_mut(&id).unwrap();
-                let app_ctx = AppCtx {
-                    user_ctx: &user_ctx,
-                };
+                // let app_ctx = AppCtx {
+                //     user_ctx: &user_ctx,
+                // };
                 wnd.update();
             }
             _ => {}
