@@ -110,15 +110,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     //Sampler defines how the texture will be rendered in shapes.
     let sampler = AssetRef::new(Sampler::new_default(window_view));
 
-    // let camera = [];
+    let camera = Camera::new(
+        Transform::from_look_at(Vec3::NEG_Z * 10.0, Vec3::ZERO, Vec3::Y),
+        Projection::default(),
+    );
+    let camera_buf = AssetRef::new(camera.build_buffer(window_view));
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_path(
         window.view(),
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
     )?;
-    // Bind sampler and texture to the brush. Make sure group_index and loc_index are the same as
+    // Bind camera, sampler and texture to the brush. Make sure group_index and loc_index are the same as
     // in the shader.
+    brush.bind(0, 0, camera_buf);
     brush.bind(1, 0, texture);
     brush.bind(1, 1, sampler);
 

@@ -179,9 +179,3 @@ impl ToBinder for Texture {
         }
     }
 }
- 
-// impl Asset for Texture {
-//     fn as_any(&self) -> &dyn std::any::Any {
-//         self
-//     }
-// }

@@ -1,0 +1,19 @@
+@document.meta
+title: Project tasks
+authors: [luxgile]
+categories: management
+version: 1.0
+@end
+
+* Version 0.2.0 
+  - ( ) Change to WGPU 
+  - (x) Simplify workflow
+  - ( ) WGSL preprocessing
+  - ( ) New project name
+  - ( ) Update readme.md
+
+** Version 0.2.1
+  - ( ) IMGUI support
+
+* Version 0.3.0
+  - ( ) Scene framework & workflow

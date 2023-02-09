@@ -3,7 +3,7 @@
 
 use std::error::Error;
 
-use glam::{Quat, Vec3};
+use glam::{Mat4, Quat, Vec3};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     Buffer, BufferUsages,
