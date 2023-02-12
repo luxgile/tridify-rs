@@ -126,8 +126,8 @@ impl ShapeBatch {
         self.indices.push(index);
         self.indices.push(index + 2);
         self.indices.push(index + 1);
-        self.indices.push(index + 2);
         self.indices.push(index + 1);
+        self.indices.push(index + 2);
         self.indices.push(index + 3);
 
         self.index_id_counter += 4;

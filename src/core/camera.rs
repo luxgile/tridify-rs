@@ -18,14 +18,14 @@ impl Projection {
         }
     }
     pub fn build_matrix(&self) -> Mat4 {
-        Mat4::perspective_lh(self.fov, self.aspect, self.znear, self.zfar)
+        Mat4::perspective_lh(self.fov.to_radians(), self.aspect, self.znear, self.zfar)
     }
 }
 impl Default for Projection {
     fn default() -> Self {
         Self {
             aspect: 16.0 / 9.0,
-            fov: 60.0,
+            fov: 65.0,
             zfar: 100.0,
             znear: 0.1,
         }
@@ -42,7 +42,8 @@ impl Camera {
     pub fn new(view: Transform, proj: Projection) -> Self { Self { view, proj } }
 
     pub fn build_camera_matrix(&self) -> Mat4 {
-        self.proj.build_matrix() * self.view.build_matrix()
+        let mat = self.proj.build_matrix() * self.view.build_matrix();
+        mat
     }
 }
 
