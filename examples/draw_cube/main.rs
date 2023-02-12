@@ -1,4 +1,4 @@
-use glam::{Quat, Vec3};
+use glam::{Mat4, Quat, Vec3};
 use nucley::*;
 
 use std::{cell::RefCell, error::Error, path::Path, rc::Rc};
@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     //Load texture from path.
     let texture = AssetRef::new(Texture::from_path(
         window_view,
-        Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\draw_cube\UV_1k.jpg"#),
+        Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\draw_cube\texture.png"#),
     ));
 
     //Sampler defines how the texture will be rendered in shapes.
@@ -31,7 +31,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     )?;
     // Bind camera, sampler and texture to the brush. Make sure group_index and loc_index are the same as
     // in the shader.
-    brush.bind(0, 0, camera_buf);
+    // FIXME: In some situations, app crashes for not being binded properly. However is 100%
+    // random.
+    brush.bind(0, 0, camera_buf.clone());
     brush.bind(1, 0, texture);
     brush.bind(1, 1, sampler);
 
@@ -43,13 +45,23 @@ fn main() -> Result<(), Box<dyn Error>> {
         Vec3::ONE * 5.,
         Color::WHITE,
     );
-
     //Bake batches into GPU buffers.
     let buffer = batch.bake_buffers(window.view())?;
 
+    let mut model = Mat4::IDENTITY;
+    let mut time_running = 0.;
     //Setup the window render loop.
     window.run(move |wnd| {
-        //TODO: Add binder into brush and fill binder every frame needed.
+        //TODO: Implement actual delta time.
+        //TODO: Simplify below code further.
+        time_running += 0.16;
+        model = Mat4::from_rotation_y(time_running);
+        let mvp = camera.build_camera_matrix() * model;
+        camera_buf
+            .borrow_mut()
+            .write(wnd, bytemuck::cast_slice(&mvp.to_cols_array()));
+        brush.bind(0, 0, camera_buf.clone());
+
         let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
         frame.render(wnd, &mut brush, &buffer);
         frame.finish(wnd).expect("Error finishing frame.");
