@@ -11,6 +11,18 @@ use wgpu::{
 
 use crate::{vertex, Color, Graphics, Rect, Vertex};
 
+pub enum MeshPrimitive {
+    Triangle,
+    Square2D,
+    Square,
+    Cube,
+}
+
+pub struct Mesh {
+    pub vertices: Vec<Vertex>,
+    pub tris: Vec<u32>,
+}
+
 // ///Buffers created from the batch and prepared to be sent directly to the GPU
 // #[derive(Debug)]
 pub struct ShapeBuffer {
@@ -48,8 +60,14 @@ impl ShapeBatch {
         })
     }
 
+    pub fn add_mesh(&mut self, mesh: Mesh) {
+        self.vertices.extend(&mesh.vertices);
+        self.indices.extend(&mesh.tris);
+        self.index_id_counter += mesh.vertices.len() as u32;
+    }
+
     ///Add a triangle to the batch specifying its 3 vertices
-    pub fn add_triangle(&mut self, v: [Vertex; 3]) -> &mut Self {
+    pub fn add_triangle(&mut self, v: [Vertex; 3]) {
         let index = self.index_id_counter;
         self.vertices.push(v[0]);
         self.indices.push(index);
@@ -58,7 +76,6 @@ impl ShapeBatch {
         self.vertices.push(v[2]);
         self.indices.push(index + 2);
         self.index_id_counter += 3;
-        self
     }
 
     pub fn add_rect(&mut self, rect: &Rect, color: Color) {
