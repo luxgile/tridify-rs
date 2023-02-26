@@ -56,7 +56,7 @@ pub trait ToBinder {
 }
 
 pub struct Binder {
-    bindings: HashMap<u32, Rc<RefCell<dyn ToBinder>>>,
+    bindings: HashMap<u32, Box<dyn ToBinder>>,
 }
 impl Binder {
     pub fn new() -> Self {
@@ -64,7 +64,7 @@ impl Binder {
             bindings: HashMap::new(),
         }
     }
-    pub fn bind(&mut self, index: u32, binding: Rc<RefCell<dyn ToBinder>>) {
+    pub fn bind(&mut self, index: u32, binding: Box<dyn ToBinder>) {
         self.bindings.insert(index, binding);
     }
 
@@ -92,7 +92,10 @@ impl Binder {
             .get_device()
             .create_bind_group(&wgpu::BindGroupDescriptor {
                 layout: &bgl,
-                entries: &bind_entries.iter().map(|(i, x)| x.get_group(*i)).collect::<Vec<_>>(),
+                entries: &bind_entries
+                    .iter()
+                    .map(|(i, x)| x.get_group(*i))
+                    .collect::<Vec<_>>(),
                 label: None,
             });
 

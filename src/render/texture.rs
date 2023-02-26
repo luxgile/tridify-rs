@@ -94,8 +94,8 @@ impl TextureDesc {
 #[derive(Debug)]
 pub struct Texture {
     pub desc: TextureDesc,
-    pub(crate) texture: wgpu::Texture,
-    pub(crate) view: wgpu::TextureView,
+    texture: Rc<wgpu::Texture>,
+    view: wgpu::TextureView,
 }
 
 impl Texture {
@@ -128,13 +128,13 @@ impl Texture {
         let view = texture.create_view(&TextureViewDescriptor::default());
         Self {
             desc,
-            texture,
+            texture: Rc::new(texture),
             view,
         }
     }
 
     ///Writes data into the texture lazily, which means it won't be done until all GPU commands are sent.
-    pub fn lazy_write_data(&mut self, graphics: &impl Graphics, data: &[u8]) {
+    pub fn lazy_write_data(&self, graphics: &impl Graphics, data: &[u8]) {
         let size = self.desc.size.get_size();
         graphics.get_queue().write_texture(
             ImageCopyTexture {

@@ -1,7 +1,7 @@
 use glam::{Mat4, Quat, Vec3};
 use nucley::*;
 
-use std::{cell::RefCell, error::Error, path::Path, rc::Rc};
+use std::{error::Error, path::Path};
 
 fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
@@ -10,19 +10,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     let window_view = window.view();
 
     //Load texture from path.
-    let texture = AssetRef::new(Texture::from_path(
+    let texture = Texture::from_path(
         window_view,
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\draw_cube\texture.png"#),
-    ));
+    );
 
     //Sampler defines how the texture will be rendered in shapes.
-    let sampler = AssetRef::new(Sampler::new_default(window_view));
+    let sampler = Sampler::new_default(window_view);
 
     let camera = Camera::new(
         Transform::from_look_at(Vec3::NEG_Z * 10.0 + Vec3::Y * 10.0, Vec3::ZERO, Vec3::Y),
         Projection::default(),
     );
-    let camera_buf = AssetRef::new(camera.build_buffer(window_view));
+    let mut camera_buf = camera.build_buffer(window_view);
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_path(
@@ -57,9 +57,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         time_running += 0.16;
         model = Mat4::from_rotation_y(time_running);
         let mvp = camera.build_camera_matrix() * model;
-        camera_buf
-            .borrow_mut()
-            .write(wnd, bytemuck::cast_slice(&mvp.to_cols_array()));
+        camera_buf.write(wnd, bytemuck::cast_slice(&mvp.to_cols_array()));
         brush.bind(0, 0, camera_buf.clone());
 
         let mut frame = wnd.start_frame(None).expect("Issue creating frame.");

@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use wgpu::{util::DeviceExt, Buffer};
 
 use crate::{Graphics, ToBinder};
@@ -9,7 +11,7 @@ pub trait ToGpuBuf {
 }
 
 pub struct GpuBuffer {
-    buffer: Buffer,
+    buffer: Rc<Buffer>,
 }
 
 impl GpuBuffer {
@@ -22,7 +24,9 @@ impl GpuBuffer {
                 usage: todo!(),
                 mapped_at_creation: todo!(),
             });
-        Self { buffer }
+        Self {
+            buffer: Rc::new(buffer),
+        }
     }
 
     pub fn init(graphics: &impl Graphics, data: &[u8]) -> Self {
@@ -35,7 +39,9 @@ impl GpuBuffer {
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             });
 
-        Self { buffer }
+        Self {
+            buffer: Rc::new(buffer),
+        }
     }
 
     pub fn write(&mut self, graphics: &impl Graphics, data: &[u8]) {
@@ -63,6 +69,14 @@ impl ToBinder for GpuBuffer {
         wgpu::BindGroupEntry {
             binding: index,
             resource: self.buffer.as_entire_binding(),
+        }
+    }
+}
+
+impl Clone for GpuBuffer {
+    fn clone(&self) -> Self {
+        Self {
+            buffer: Rc::clone(&self.buffer),
         }
     }
 }

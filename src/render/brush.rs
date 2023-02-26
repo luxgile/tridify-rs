@@ -56,7 +56,8 @@ impl Brush {
         })
     }
 
-    pub fn bind(&mut self, group_index: u32, loc_index: u32, asset: Rc<RefCell<dyn ToBinder>>) {
+    pub fn bind(&mut self, group_index: u32, loc_index: u32, asset: impl ToBinder + 'static) {
+        let asset = Box::new(asset);
         if let Some(binder) = self.assets_to_bind.get_mut(&group_index) {
             binder.bind(loc_index, asset);
         } else {
