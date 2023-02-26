@@ -76,9 +76,14 @@ impl Brush {
         let mut bgls = Vec::new();
         for (i, binder) in self.assets_to_bind.iter() {
             let (bgl, bg) = binder.bake(graphics);
+            println!("{:?}", bgl);
             bgls.push(bgl);
             self.cached_bindings.push((*i, bg));
         }
+        // FIXME: In some situations, app crashes for not being binded properly. However is 100%
+        // random.
+        // Looks like the camera buffer is not always added for some reason. Look into where is
+        // added and check.
         let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &bgls.iter().map(|x| x).collect::<Vec<_>>(),

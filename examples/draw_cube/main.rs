@@ -31,8 +31,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     )?;
     // Bind camera, sampler and texture to the brush. Make sure group_index and loc_index are the same as
     // in the shader.
-    // FIXME: In some situations, app crashes for not being binded properly. However is 100%
-    // random.
     brush.bind(0, 0, camera_buf.clone());
     brush.bind(1, 0, texture);
     brush.bind(1, 1, sampler);
