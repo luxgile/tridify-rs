@@ -10,10 +10,11 @@ use winit::{
     event_loop::ControlFlow,
 };
 
-use crate::{Graphics, Nucley};
 use crate::{Color, Frame, RenderOptions};
+use crate::{Graphics, Nucley};
 
 pub struct Window {
+    pub(crate) last_draw_time: Instant,
     pub(crate) wnd: WindowView,
     pub(crate) user_loop: Option<Box<dyn FnMut(&mut WindowView)>>,
 }
@@ -23,16 +24,18 @@ impl Window {
             user_loop.as_mut()(&mut self.wnd);
         }
     }
-    pub fn run(&mut self, func: impl FnMut( &mut WindowView) + 'static) {
+    pub fn run(&mut self, func: impl FnMut(&mut WindowView) + 'static) {
         self.user_loop = Some(Box::new(func));
     }
+
+    pub fn redraw(&self) { self.wnd.redraw(); }
 
     pub fn view(&self) -> &WindowView { &self.wnd }
     pub fn view_mut(&mut self) -> &mut WindowView { &mut self.wnd }
 }
 
 pub struct WindowView {
-    pub(crate) wnd: winit::window::Window,
+    pub(crate) winit_wnd: winit::window::Window,
     pub(crate) surface_config: wgpu::SurfaceConfiguration,
     pub(crate) surface: wgpu::Surface,
     pub(crate) adapter: wgpu::Adapter,
@@ -52,8 +55,10 @@ impl WindowView {
         self.surface_config.width = size.x.max(1);
         self.surface_config.height = size.y.max(1);
         self.surface.configure(&self.device, &self.surface_config);
-        self.wnd.request_redraw();
+        self.redraw();
     }
+
+    pub fn redraw(&self) { self.winit_wnd.request_redraw(); }
 
     pub fn start_frame(&self, options: Option<RenderOptions>) -> Result<Frame, Box<dyn Error>> {
         Frame::new(self, options)

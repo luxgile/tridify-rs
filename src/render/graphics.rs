@@ -100,9 +100,10 @@ impl Nucley {
         }
 
         let window = Window {
+            last_draw_time: Instant::now(),
             user_loop: None,
             wnd: WindowView {
-                wnd,
+                winit_wnd: wnd,
                 adapter,
                 device,
                 queue,
@@ -134,12 +135,22 @@ impl Nucley {
                 }
                 _ => {}
             },
+            Event::MainEventsCleared => {
+                for (id, wnd) in self.windows.iter_mut() {
+                    //TODO: User configurable
+                    if wnd.last_draw_time.elapsed() >= Duration::from_millis(16.6 as u64) {
+                        wnd.redraw();
+                        wnd.last_draw_time = Instant::now();
+                    }
+                }
+            }
             Event::RedrawRequested(id) => {
                 let wnd = self.get_window_mut(&id).unwrap();
                 // let app_ctx = AppCtx {
                 //     user_ctx: &user_ctx,
                 // };
                 wnd.update();
+                wnd.last_draw_time = Instant::now();
             }
             _ => {}
         });
