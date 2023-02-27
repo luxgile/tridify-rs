@@ -3,6 +3,7 @@ use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
     error::Error,
+    fmt::Display,
     rc::Rc,
 };
 
@@ -12,43 +13,6 @@ use wgpu::{
 };
 
 use crate::{AssetRef, Graphics, Texture, TextureSize};
-
-// #[derive(Clone)]
-// pub enum BinderPart<'a> {
-//     Sampler,
-//     Texture(&'a Texture),
-// }
-// impl<'a> BinderPart<'a> {
-//     fn to_layout(&self, index: u32) -> BindGroupLayoutEntry {
-//         match self {
-//             BinderPart::Sampler => BindGroupLayoutEntry {
-//                 binding: index,
-//                 visibility: ShaderStages::FRAGMENT,
-//                 ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-//                 count: None,
-//             },
-//             BinderPart::Texture(texture) => BindGroupLayoutEntry {
-//                 binding: index,
-//                 visibility: ShaderStages::FRAGMENT,
-//                 ty: wgpu::BindingType::Texture {
-//                     sample_type: wgpu::TextureSampleType::Float { filterable: true },
-//                     view_dimension: texture.desc.size.get_wgpu_view_dimension(),
-//                     multisampled: false,
-//                 },
-//                 count: None,
-//             },
-//         }
-//     }
-//     fn to_entry(&self) -> BindGroupEntry {
-//         match self {
-//             BinderPart::Sampler => todo!(),
-//             BinderPart::Texture(texture) => wgpu::BindGroupEntry {
-//                 binding: 0,
-//                 resource: wgpu::BindingResource::TextureView(&texture.view),
-//             },
-//         }
-//     }
-// }
 
 pub trait ToBinder {
     fn get_layout(&self, index: u32) -> BindGroupLayoutEntry;

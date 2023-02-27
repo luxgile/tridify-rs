@@ -23,7 +23,6 @@ use super::Graphics;
 
 // //TODO: PIPELINE GOES HERE
 // ///Used to tell the GPU how to draw the shapes provided.
-// #[derive(Debug)]
 pub struct Brush {
     compiled_shader: ShaderModule,
     cached_pipeline: Option<RenderPipeline>,
@@ -76,17 +75,19 @@ impl Brush {
         let mut bgls = Vec::new();
         for (i, binder) in self.assets_to_bind.iter() {
             let (bgl, bg) = binder.bake(graphics);
-            println!("{:?}", bgl);
-            bgls.push(bgl);
+            bgls.push((i, bgl));
             self.cached_bindings.push((*i, bg));
         }
+        bgls.sort_by(|a, b| a.0.partial_cmp(b.0).unwrap());
         // FIXME: In some situations, app crashes for not being binded properly. However is 100%
         // random.
         // Looks like the camera buffer is not always added for some reason. Look into where is
         // added and check.
+        // Actually, is being added properly (Assets to bind are 2 when app crashes). Might not be
+        // baking properly.
         let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: None,
-            bind_group_layouts: &bgls.iter().map(|x| x).collect::<Vec<_>>(),
+            bind_group_layouts: &bgls.iter().map(|x| &x.1).collect::<Vec<_>>(),
             push_constant_ranges: &[],
         });
         let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
