@@ -2,7 +2,6 @@ use std::{error::Error, path::Path};
 
 use nucley::*;
 pub fn main() -> Result<(), Box<dyn Error>> {
-
     //Create app and main window.
     let mut app = Nucley::new();
     let window = app.create_window()?;
@@ -25,7 +24,8 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let buffer = batch.bake_buffers(window.view())?;
 
     //Setup the window render loop.
-    window.run(move |wnd| {
+    window.render_loop(move |wnd, frame_ctx| {
+        //Create a frame, render shapes with brush and finish it to render into screen.
         let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
         frame.render(wnd, &mut brush, &buffer);
         frame.finish(wnd).expect("Error finishing frame.");

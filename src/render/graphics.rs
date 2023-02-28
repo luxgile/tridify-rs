@@ -20,9 +20,12 @@ use winit::{
 
 use crate::{Color, Frame, Texture, Window, WindowView};
 
-pub struct AppCtx<'a, T> {
+pub struct FrameContext<'a> {
     //event loop
-    user_ctx: &'a T,
+    // pub user_ctx: &'a T,
+    pub delta_time: f64,
+    pub elapsed_time: f64,
+    eloop: &'a EventLoopWindowTarget<()>,
 }
 pub struct Nucley {
     windows: HashMap<WindowId, Window>,
@@ -100,6 +103,7 @@ impl Nucley {
         }
 
         let window = Window {
+            created_time: Instant::now(),
             last_draw_time: Instant::now(),
             user_loop: None,
             wnd: WindowView {
@@ -146,10 +150,13 @@ impl Nucley {
             }
             Event::RedrawRequested(id) => {
                 let wnd = self.get_window_mut(&id).unwrap();
-                // let app_ctx = AppCtx {
-                //     user_ctx: &user_ctx,
-                // };
-                wnd.update();
+                let frame_ctx = FrameContext {
+                    delta_time: wnd.last_draw_time.elapsed().as_secs_f64(),
+                    elapsed_time: wnd.time_running().as_secs_f64(),
+                    // user_ctx: &user_ctx,
+                    eloop,
+                };
+                wnd.update(&frame_ctx);
                 wnd.last_draw_time = Instant::now();
             }
             _ => {}
