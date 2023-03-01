@@ -1,11 +1,3 @@
-// use std::path::Path;
-
-// use glium::Program;
-
-// use crate::{core::Window, LErr};
-
-// use super::{Uniform, UniformBuffer};
-
 use std::{borrow::Cow, collections::HashMap, error::Error, fs::File, io::Read, path::Path};
 
 use wgpu::{

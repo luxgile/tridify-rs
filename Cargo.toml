@@ -1,10 +1,10 @@
 [package]
-name = "nucley"
+name = "tridify.rs"
 description = "Fast render OpenGL API that aims to simplify rendering pipelines. Currently under heavy development."
 version = "0.2.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/luxgile/LDrawy"
+repository = "https://github.com/luxgile/tridify.rs"
 readme = "readme.md"
 
 keywords = ["graphics", "render", "OpenGL", "GPU", "API"]
