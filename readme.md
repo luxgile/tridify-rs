@@ -20,4 +20,4 @@ However I plan on adding more high-level functionality to trade some flexibility
  - [ ] Particle and VFXs
 
 ### Examples
-[Here](examples/readme.md) you can find some examples on how to use Tridify.rs.
+[Here](examples) you can find some examples on how to use Tridify.rs.
