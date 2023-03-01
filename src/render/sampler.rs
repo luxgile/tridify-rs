@@ -2,6 +2,7 @@ use wgpu::{ShaderModel, ShaderStages};
 
 use crate::{Graphics, ToBinder};
 
+/// Representation on how a texture will be drawn into a shape.
 pub struct Sampler {
     inner_sampler: wgpu::Sampler,
 }

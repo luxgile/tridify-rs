@@ -1,22 +1,12 @@
-// use crate::core::*;
-// use crate::{vertex, Color, Vec3, Vertex, Window};
-
 use std::error::Error;
 
-use glam::{Mat4, Quat, Vec3};
+use glam::{Quat, Vec3};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     Buffer, BufferUsages,
 };
 
 use crate::{vertex, Color, Graphics, Rect, Vertex};
-
-pub enum MeshPrimitive {
-    Triangle,
-    Square2D,
-    Square,
-    Cube,
-}
 
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
@@ -40,6 +30,14 @@ pub struct ShapeBatch {
 }
 
 impl ShapeBatch {
+    pub fn new() -> Self {
+        Self {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+            index_id_counter: 0,
+        }
+    }
+
     ///Create buffers based on current batch data.
     pub fn bake_buffers(&self, graphics: &impl Graphics) -> Result<ShapeBuffer, Box<dyn Error>> {
         let device = graphics.get_device();
@@ -60,14 +58,15 @@ impl ShapeBatch {
         })
     }
 
-    pub fn add_mesh(&mut self, mesh: Mesh) {
+    pub fn add_mesh(&mut self, mesh: Mesh) -> &mut ShapeBatch {
         self.vertices.extend(&mesh.vertices);
         self.indices.extend(&mesh.tris);
         self.index_id_counter += mesh.vertices.len() as u32;
+        self
     }
 
     ///Add a triangle to the batch specifying its 3 vertices
-    pub fn add_triangle(&mut self, v: [Vertex; 3]) {
+    pub fn add_triangle(&mut self, v: [Vertex; 3]) -> &mut ShapeBatch {
         let index = self.index_id_counter;
         self.vertices.push(v[0]);
         self.indices.push(index);
@@ -76,14 +75,16 @@ impl ShapeBatch {
         self.vertices.push(v[2]);
         self.indices.push(index + 2);
         self.index_id_counter += 3;
+        self
     }
 
-    pub fn add_rect(&mut self, rect: &Rect, color: Color) {
+    pub fn add_rect(&mut self, rect: &Rect, color: Color) -> &mut ShapeBatch {
         self.add_2d_square(rect.center().extend(0.), rect.size.x, rect.size.y, color);
+        self
     }
 
     ///Add a square on axis XY to the batch specifying the center, width, height and color.
-    pub fn add_2d_square(&mut self, center: Vec3, w: f32, h: f32, color: Color) {
+    pub fn add_2d_square(&mut self, center: Vec3, w: f32, h: f32, color: Color) -> &mut ShapeBatch {
         //Adding vertices
         let hw = w / 2.0;
         let hh = h / 2.0;
@@ -106,12 +107,13 @@ impl ShapeBatch {
         self.indices.push(index + 3);
 
         self.index_id_counter += 4;
+        self
     }
 
     ///Add a square to the batch specifying the center, width, height and color.
     pub fn add_square(
         &mut self, center: Vec3, up: Vec3, normal: Vec3, w: f32, h: f32, color: Color,
-    ) {
+    ) -> &mut ShapeBatch {
         //Adding vertices
         let right = up.cross(normal).normalize();
         let hw = w / 2.0;
@@ -148,10 +150,13 @@ impl ShapeBatch {
         self.indices.push(index + 3);
 
         self.index_id_counter += 4;
+        self
     }
 
     ///Add a cube to the batch specifying the center, orientation, size and color.
-    pub fn add_cube(&mut self, center: Vec3, orientation: Quat, scale: Vec3, color: Color) {
+    pub fn add_cube(
+        &mut self, center: Vec3, orientation: Quat, scale: Vec3, color: Color,
+    ) -> &mut ShapeBatch {
         let hw = scale.x / 2.0;
         let hh = scale.y / 2.0;
         let hd = scale.z / 2.0;
@@ -164,5 +169,6 @@ impl ShapeBatch {
         self.add_square(center - up * hh, forw, -up, scale.x, scale.z, color);
         self.add_square(center + forw * hd, up, forw, scale.x, scale.y, color);
         self.add_square(center - forw * hd, up, -forw, scale.x, scale.y, color);
+        self
     }
 }

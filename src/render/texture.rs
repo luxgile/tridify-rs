@@ -1,30 +1,15 @@
-// use std::path::Path;
-
-// use glium::texture::SrgbTexture2d;
-
-// use crate::Window;
-
-// #[derive(Debug)]
-// pub struct TextureSettings {}
-
-use std::{
-    cell::{Cell, RefCell},
-    num::NonZeroU32,
-    path::Path,
-    rc::Rc,
-};
+use std::{num::NonZeroU32, path::Path, rc::Rc};
 
 use glam::{UVec2, UVec3};
-use image::GenericImageView;
 use wgpu::{
     ImageCopyTexture, ImageDataLayout, ShaderStages, TextureAspect, TextureDescriptor,
-    TextureFormat, TextureUsages, TextureView, TextureViewDescriptor,
+    TextureFormat, TextureUsages, TextureViewDescriptor,
 };
 
-use crate::{Color, Graphics, ToBinder};
+use crate::{Graphics, ToBinder};
 
 bitflags::bitflags! {
-
+    /// Specifies how the texture will be used for optimizations.
     pub struct TextureUsage: u32 {
         const DESTINATION = 1 << 0;
         const SOURCE = 1 << 1;
@@ -91,6 +76,7 @@ impl TextureDesc {
     }
 }
 
+/// GPU texture handle.
 #[derive(Debug)]
 pub struct Texture {
     pub desc: TextureDesc,

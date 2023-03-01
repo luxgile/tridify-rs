@@ -1,18 +1,17 @@
 use std::error::Error;
 
-use glam::{UVec2, Vec2};
 use wgpu::{
     CommandEncoder, CommandEncoderDescriptor, Operations, RenderPassColorAttachment,
-    RenderPassDescriptor, RenderPipeline, SurfaceTexture, TextureView, TextureViewDescriptor,
+    RenderPassDescriptor, SurfaceTexture, TextureView, TextureViewDescriptor,
 };
 
-use crate::core::WindowView;
+use crate::core::Color;
 use crate::Graphics;
 use crate::ShapeBuffer;
-use crate::{core::Color, Rect};
 
 use super::Brush;
 
+/// Rendering configuration on how to create and represent the given frame.
 pub struct RenderOptions {
     pub clear_color: Color,
 }
@@ -79,8 +78,9 @@ impl Frame {
         let pipeline = brush.get_pipeline();
         pass.set_pipeline(pipeline);
         let bind_groups = brush.get_bind_groups();
-        bind_groups.iter().for_each(|(id, bg)| pass.set_bind_group(*id, bg, &[]));
-
+        bind_groups
+            .iter()
+            .for_each(|(id, bg)| pass.set_bind_group(*id, bg, &[]));
 
         pass.set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
         pass.set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);

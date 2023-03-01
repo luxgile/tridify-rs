@@ -2,24 +2,23 @@ use std::{
     cell::RefCell,
     collections::HashMap,
     error::Error,
-    future::Future,
     time::{Duration, Instant},
 };
 
-use env_logger::fmt::*;
 use glam::UVec2;
 use wgpu::{
     Adapter, Backends, Device, DeviceDescriptor, Features, Limits, Queue, RequestAdapterOptions,
     Surface, SurfaceConfiguration, TextureUsages,
 };
 use winit::{
-    event::{self, Event, WindowEvent},
-    event_loop::{self, ControlFlow, EventLoop, EventLoopWindowTarget},
+    event::{Event, WindowEvent},
+    event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget},
     window::WindowId,
 };
 
-use crate::{Color, Frame, Texture, Window, WindowView};
+use crate::{Texture, Window, WindowView};
 
+/// Represents basic information for a given windows rendering frame.
 pub struct FrameContext<'a> {
     //event loop
     // pub user_ctx: &'a T,
@@ -27,13 +26,14 @@ pub struct FrameContext<'a> {
     pub elapsed_time: f64,
     eloop: &'a EventLoopWindowTarget<()>,
 }
-pub struct Nucley {
+
+/// Root struct which initializes WGPU, starts window management and handles application loop.
+pub struct Tridify {
     windows: HashMap<WindowId, Window>,
     wb: Option<EventLoop<()>>,
     wgpu: wgpu::Instance,
-    pub test: Option<RefCell<Texture>>,
 }
-impl Nucley {
+impl Tridify {
     pub fn new() -> Self {
         cfg_if::cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
@@ -48,7 +48,6 @@ impl Nucley {
             wgpu: wgpu::Instance::new(Backends::all()),
             wb: Some(EventLoop::new()),
             windows: HashMap::new(),
-            test: None,
         }
     }
 
@@ -120,6 +119,9 @@ impl Nucley {
         let window = self.windows.get_mut(&wnd_id).unwrap();
         Ok(window)
     }
+
+    /// Begin application logic loop. Should be called last when initializing since this function
+    /// can't never return.
     pub fn start<T: 'static>(mut self, user_ctx: T) -> ! {
         let event_loop = self.wb.take().unwrap();
         event_loop.run(move |event, eloop, flow| match event {
@@ -156,7 +158,7 @@ impl Nucley {
                     // user_ctx: &user_ctx,
                     eloop,
                 };
-                wnd.update(&frame_ctx);
+                wnd.render_step(&frame_ctx);
                 wnd.last_draw_time = Instant::now();
             }
             _ => {}

@@ -5,7 +5,7 @@ use std::{error::Error, path::Path};
 
 fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
-    let mut app = Nucley::new();
+    let mut app = Tridify::new();
     let window = app.create_window()?;
     let window_view = window.view();
 
@@ -35,36 +35,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     brush.bind(1, 0, texture);
     brush.bind(1, 1, sampler);
 
-    //Create a shape batch and add a triangle to it.
-    let mut batch = ShapeBatch::default();
-    batch.add_cube(
-        Vec3::ZERO,
-        Quat::from_rotation_x(35.) * Quat::from_rotation_y(35.),
-        Vec3::ONE * 1.,
-        Color::WHITE,
-    );
-    batch.add_cube(
-        Vec3::X * 5.,
-        Quat::from_rotation_x(55.) * Quat::from_rotation_y(10.),
-        Vec3::ONE * 2.,
-        Color::WHITE,
-    );
-    batch.add_cube(
-        Vec3::NEG_X * 5.,
-        Quat::from_rotation_x(74.) * Quat::from_rotation_y(120.),
-        Vec3::ONE * 0.5,
-        Color::WHITE,
-    );
+    //Create and bake a shape batch with a cube in it.
+    let shape_buffer = ShapeBatch::new()
+        .add_cube(
+            Vec3::ZERO,
+            Quat::from_rotation_x(35.) * Quat::from_rotation_y(35.),
+            Vec3::ONE * 1.,
+            Color::WHITE,
+        )
+        .bake_buffers(window_view)?;
 
-    //Bake batches into packed GPU buffers.
-    let buffer = batch.bake_buffers(window.view())?;
-
-    let mut model = Mat4::IDENTITY;
     //Setup the window render loop.
-    window.render_loop(move |wnd, frame_ctx| {
-        //FIXME: Not rotating in the proper order.
-        //Rotate model matrix
-        model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32);
+    window.set_render_loop(move |wnd, frame_ctx| {
+        let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32);
         let mvp = camera.build_camera_matrix() * model;
 
         //Updating the gpu buffer will update all brushes binded as well.
@@ -72,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         //Creating and drawing render frame using brush and buffer.
         let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
-        frame.render(wnd, &mut brush, &buffer);
+        frame.render(wnd, &mut brush, &shape_buffer);
         frame.finish(wnd).expect("Error finishing frame.");
     });
 

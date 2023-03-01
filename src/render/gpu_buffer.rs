@@ -4,17 +4,17 @@ use wgpu::{util::DeviceExt, Buffer};
 
 use crate::{Graphics, ToBinder};
 
-use super::graphics;
-
 pub trait ToGpuBuf {
     fn build_buffer(&self, graphics: &impl Graphics) -> GpuBuffer;
 }
 
+/// Handle to a GPU buffer.
 pub struct GpuBuffer {
     buffer: Rc<Buffer>,
 }
 
 impl GpuBuffer {
+    /// Creates a new buffer with uninitialized data.
     pub fn new(graphics: &impl Graphics) -> Self {
         let buffer = graphics
             .get_device()
@@ -29,6 +29,7 @@ impl GpuBuffer {
         }
     }
 
+    /// Creates a buffer with the given bytes.
     pub fn init(graphics: &impl Graphics, data: &[u8]) -> Self {
         let buffer = graphics
             .get_device()
@@ -44,6 +45,7 @@ impl GpuBuffer {
         }
     }
 
+    /// Update buffer GPU data with bytes provided.
     pub fn write(&mut self, graphics: &impl Graphics, data: &[u8]) {
         graphics.get_queue().write_buffer(&self.buffer, 0, data);
     }

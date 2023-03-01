@@ -5,14 +5,11 @@ use std::{
 
 use glam::UVec2;
 use wgpu::{Adapter, Device, Queue};
-use winit::{
-    event::{Event, WindowEvent},
-    event_loop::ControlFlow,
-};
 
-use crate::{Color, Frame, FrameContext, RenderOptions};
-use crate::{Graphics, Nucley};
+use crate::Graphics;
+use crate::{Frame, FrameContext, RenderOptions};
 
+/// Desktop window representation. Stores it's own GPU context and render loop.
 pub struct Window {
     pub(crate) created_time: Instant,
     pub(crate) last_draw_time: Instant,
@@ -20,23 +17,30 @@ pub struct Window {
     pub(crate) user_loop: Option<Box<dyn FnMut(&mut WindowView, &FrameContext)>>,
 }
 impl Window {
-    pub fn update(&mut self, frame_ctx: &FrameContext) {
+    /// Step through render loop once.
+    pub fn render_step(&mut self, frame_ctx: &FrameContext) {
         if let Some(user_loop) = self.user_loop.as_mut() {
             user_loop.as_mut()(&mut self.wnd, frame_ctx);
         }
     }
-    pub fn render_loop(&mut self, func: impl FnMut(&mut WindowView, &FrameContext) + 'static) {
+
+    /// Define closure that will be called each time the window is rendered
+    pub fn set_render_loop(&mut self, func: impl FnMut(&mut WindowView, &FrameContext) + 'static) {
         self.user_loop = Some(Box::new(func));
     }
 
+    /// Force the window to render again.
     pub fn redraw(&self) { self.wnd.redraw(); }
 
     pub fn view(&self) -> &WindowView { &self.wnd }
     pub fn view_mut(&mut self) -> &mut WindowView { &mut self.wnd }
 
+    /// Time the window has been running since its creation.
     pub fn time_running(&self) -> Duration { self.created_time.elapsed() }
 }
 
+/// Holds GPU context, devices, surfaces, etc. for a window. Must be used on most GPU related
+/// functions.
 pub struct WindowView {
     pub(crate) winit_wnd: winit::window::Window,
     pub(crate) surface_config: wgpu::SurfaceConfiguration,
@@ -52,8 +56,7 @@ impl Graphics for WindowView {
     fn get_surface(&self) -> &wgpu::Surface { &self.surface }
 }
 impl WindowView {
-    // pub fn update(&mut self, graphics: &mut Graphics) { self.user_loop.as_mut()(self, graphics); }
-
+    /// Change window GPU surface size.
     pub fn resize(&mut self, size: UVec2) {
         self.surface_config.width = size.x.max(1);
         self.surface_config.height = size.y.max(1);
@@ -61,8 +64,10 @@ impl WindowView {
         self.redraw();
     }
 
+    /// Force the window to render again.
     pub fn redraw(&self) { self.winit_wnd.request_redraw(); }
 
+    /// Create a new frame that will be drawn to.
     pub fn start_frame(&self, options: Option<RenderOptions>) -> Result<Frame, Box<dyn Error>> {
         Frame::new(self, options)
     }

@@ -1,7 +1,8 @@
 use glam::Mat4;
 
-use crate::{GpuBuffer, Graphics, ToBinder, ToGpuBuf, Transform};
+use crate::{GpuBuffer, Graphics, ToGpuBuf, Transform};
 
+/// Projection representation using field of view and aspect ratio.
 pub struct Projection {
     pub aspect: f32,
     pub fov: f32,
@@ -32,6 +33,7 @@ impl Default for Projection {
     }
 }
 
+/// Representation of camera to simplify matrices calculation
 #[derive(Default)]
 pub struct Camera {
     pub view: Transform,

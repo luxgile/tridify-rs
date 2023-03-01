@@ -8,13 +8,14 @@ version: 1.0
 * Version 0.2.0 
   - (x) Change to WGPU 
   - (x) Simplify workflow
-  - ( ) Update examples
-  - ( ) WGSL preprocessing
-  - ( ) New project name
-  - ( ) Update readme.md
+  - (x) Update examples
+  - (x) New project name
+  - (x) Update readme.md
 
 ** Version 0.2.1
   - ( ) IMGUI support
+  - ( ) WGSL preprocessing
+
 
 * Version 0.3.0
   - ( ) Scene framework & workflow
