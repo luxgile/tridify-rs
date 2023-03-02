@@ -13,9 +13,13 @@ version: 1.0
   - (x) Update readme.md
 
 ** Version 0.2.1
+  - ( ) Store all global accessible data into a general "database" similar to "Resources" in bevy.
   - ( ) IMGUI support
+   - ( ) Make feature optional
+    
+** Version 0.2.2
   - ( ) WGSL preprocessing
-
-
+  - ( ) Deferred rendering
+  
 * Version 0.3.0
   - ( ) Scene framework & workflow

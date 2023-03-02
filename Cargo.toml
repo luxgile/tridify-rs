@@ -1,7 +1,7 @@
 [package]
 name = "tridify-rs"
 description = "Fast render OpenGL API that aims to simplify rendering pipelines. Currently under heavy development."
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/luxgile/tridify.rs"
@@ -9,9 +9,6 @@ readme = "readme.md"
 
 keywords = ["graphics", "render", "OpenGL", "GPU", "API"]
 categories = ["multimedia", "rendering", "rendering::engine"]
-
-[features]
-# imgui-rs = ["dep:imgui", "dep:imgui-glium-renderer"]
 
 [lib] #To compile to DLL in windows and load them in web
 crate-type = ["cdylib", "rlib"]
@@ -29,6 +26,8 @@ wgpu = "0.14.2"
 env_logger = "0.10.0"
 bitflags = "1.3.2"
 uuid = { version = "1.3.0", features = ["v4", "macro-diagnostics"] }
+egui = "0.21.0"
+
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
