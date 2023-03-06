@@ -1,6 +1,7 @@
 use std::{error::Error, path::Path};
 
-use nucley::*;
+use tridify_rs::*;
+
 pub fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Tridify::new();
@@ -10,6 +11,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_path(
+        BrushDesc::default(),
         window_view,
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
     )?;
@@ -26,9 +28,11 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     //Setup the window render loop.
     window.set_render_loop(move |wnd, _| {
         //Create a frame, render shapes with brush and finish it to draw into the screen.
-        let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
-        frame.render(wnd, &mut brush, &buffer);
-        frame.finish(wnd).expect("Error finishing frame.");
+        let mut render_pass = wnd
+            .start_render_pass(RenderOptions::default())
+            .expect("Issue creating frame.");
+        render_pass.render(wnd, &mut brush, &buffer);
+        render_pass.finish(wnd).expect("Error finishing frame.");
     });
 
     //Start program.

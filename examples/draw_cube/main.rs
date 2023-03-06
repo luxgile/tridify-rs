@@ -1,5 +1,5 @@
 use glam::{Mat4, Quat, Vec3};
-use nucley::*;
+use tridify_rs::*;
 
 use std::{error::Error, path::Path};
 
@@ -26,6 +26,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_path(
+        BrushDesc::default(),
         window_view,
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\3d_basic.wgsl"#),
     )?;
@@ -40,7 +41,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .add_cube(
             Vec3::ZERO,
             Quat::from_rotation_x(35.) * Quat::from_rotation_y(35.),
-            Vec3::ONE * 1.,
+            Vec3::ONE * 5.,
             Color::WHITE,
         )
         .bake_buffers(window_view)?;
@@ -54,7 +55,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         camera_buf.write(wnd, bytemuck::cast_slice(&mvp.to_cols_array()));
 
         //Creating and drawing render frame using brush and buffer.
-        let mut frame = wnd.start_frame(None).expect("Issue creating frame.");
+        let mut frame = wnd
+            .start_render_pass(RenderOptions::default())
+            .expect("Issue creating frame.");
         frame.render(wnd, &mut brush, &shape_buffer);
         frame.finish(wnd).expect("Error finishing frame.");
     });

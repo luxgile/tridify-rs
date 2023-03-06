@@ -16,7 +16,7 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{Texture, Window, WindowView};
+use crate::{RenderOptions, RenderPass, Texture, Window, WindowView};
 
 /// Represents basic information for a given windows rendering frame.
 pub struct FrameContext<'a> {
@@ -102,10 +102,10 @@ impl Tridify {
         }
 
         let window = Window {
-            created_time: Instant::now(),
-            last_draw_time: Instant::now(),
             user_loop: None,
             wnd: WindowView {
+                created_time: Instant::now(),
+                last_draw_time: Instant::now(),
                 winit_wnd: wnd,
                 adapter,
                 device,
@@ -137,29 +137,30 @@ impl Tridify {
                 }
                 WindowEvent::Resized(size) => {
                     let wnd = self.get_window_mut(&window_id).unwrap();
-                    wnd.wnd.resize(UVec2::new(size.width, size.height))
+                    wnd.wnd
+                        .set_wnd_gpu_size(UVec2::new(size.width, size.height))
                 }
                 _ => {}
             },
             Event::MainEventsCleared => {
                 for (id, wnd) in self.windows.iter_mut() {
                     //TODO: User configurable
-                    if wnd.last_draw_time.elapsed() >= Duration::from_millis(16.6 as u64) {
-                        wnd.redraw();
-                        wnd.last_draw_time = Instant::now();
+                    if wnd.view().last_draw_time.elapsed() >= Duration::from_millis(16.6 as u64) {
+                        wnd.view_mut().redraw();
+                        wnd.view_mut().last_draw_time = Instant::now();
                     }
                 }
             }
             Event::RedrawRequested(id) => {
                 let wnd = self.get_window_mut(&id).unwrap();
                 let frame_ctx = FrameContext {
-                    delta_time: wnd.last_draw_time.elapsed().as_secs_f64(),
-                    elapsed_time: wnd.time_running().as_secs_f64(),
+                    delta_time: wnd.view().last_draw_time.elapsed().as_secs_f64(),
+                    elapsed_time: wnd.view().time_running().as_secs_f64(),
                     // user_ctx: &user_ctx,
                     eloop,
                 };
                 wnd.render_step(&frame_ctx);
-                wnd.last_draw_time = Instant::now();
+                wnd.view_mut().last_draw_time = Instant::now();
             }
             _ => {}
         });
@@ -177,4 +178,6 @@ pub trait Graphics {
     fn get_device(&self) -> &Device;
     fn get_queue(&self) -> &Queue;
     fn get_surface(&self) -> &Surface;
+    fn start_render_pass(&self, options: RenderOptions) -> Result<RenderPass, Box<dyn Error>>;
+    fn get_screen_size(&self) -> UVec2;
 }

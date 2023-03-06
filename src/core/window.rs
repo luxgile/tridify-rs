@@ -3,16 +3,15 @@ use std::{
     time::{Duration, Instant},
 };
 
-use glam::UVec2;
+use glam::{UVec2, Vec2};
 use wgpu::{Adapter, Device, Queue};
+use winit::dpi::LogicalSize;
 
 use crate::Graphics;
-use crate::{Frame, FrameContext, RenderOptions};
+use crate::{FrameContext, RenderOptions, RenderPass};
 
 /// Desktop window representation. Stores it's own GPU context and render loop.
 pub struct Window {
-    pub(crate) created_time: Instant,
-    pub(crate) last_draw_time: Instant,
     pub(crate) wnd: WindowView,
     pub(crate) user_loop: Option<Box<dyn FnMut(&mut WindowView, &FrameContext)>>,
 }
@@ -29,20 +28,18 @@ impl Window {
         self.user_loop = Some(Box::new(func));
     }
 
-    /// Force the window to render again.
-    pub fn redraw(&self) { self.wnd.redraw(); }
-
     pub fn view(&self) -> &WindowView { &self.wnd }
     pub fn view_mut(&mut self) -> &mut WindowView { &mut self.wnd }
-
-    /// Time the window has been running since its creation.
-    pub fn time_running(&self) -> Duration { self.created_time.elapsed() }
 }
 
 /// Holds GPU context, devices, surfaces, etc. for a window. Must be used on most GPU related
 /// functions.
 pub struct WindowView {
+    pub(crate) created_time: Instant,
+    pub(crate) last_draw_time: Instant,
+
     pub(crate) winit_wnd: winit::window::Window,
+
     pub(crate) surface_config: wgpu::SurfaceConfiguration,
     pub(crate) surface: wgpu::Surface,
     pub(crate) adapter: wgpu::Adapter,
@@ -54,10 +51,25 @@ impl Graphics for WindowView {
     fn get_device(&self) -> &Device { &self.device }
     fn get_queue(&self) -> &Queue { &self.queue }
     fn get_surface(&self) -> &wgpu::Surface { &self.surface }
+    fn get_screen_size(&self) -> UVec2 { self.get_wnd_size() }
+    fn start_render_pass(&self, options: RenderOptions) -> Result<RenderPass, Box<dyn Error>> {
+        self.start_render_pass(options)
+    }
 }
 impl WindowView {
-    /// Change window GPU surface size.
-    pub fn resize(&mut self, size: UVec2) {
+    pub fn set_wnd_size(&mut self, size: UVec2) {
+        self.winit_wnd
+            .set_inner_size(LogicalSize::new(size.x, size.y));
+        self.set_wnd_gpu_size(size);
+    }
+
+    pub fn get_wnd_size(&self) -> UVec2 {
+        let size = self.winit_wnd.inner_size();
+        UVec2::new(size.width, size.height)
+    }
+
+    /// Change window GPU surface dimension.
+    pub fn set_wnd_gpu_size(&mut self, size: UVec2) {
         self.surface_config.width = size.x.max(1);
         self.surface_config.height = size.y.max(1);
         self.surface.configure(&self.device, &self.surface_config);
@@ -68,7 +80,10 @@ impl WindowView {
     pub fn redraw(&self) { self.winit_wnd.request_redraw(); }
 
     /// Create a new frame that will be drawn to.
-    pub fn start_frame(&self, options: Option<RenderOptions>) -> Result<Frame, Box<dyn Error>> {
-        Frame::new(self, options)
+    pub fn start_render_pass(&self, options: RenderOptions) -> Result<RenderPass, Box<dyn Error>> {
+        RenderPass::new(self, options)
     }
+
+    /// Time the window has been running since its creation.
+    pub fn time_running(&self) -> Duration { self.created_time.elapsed() }
 }

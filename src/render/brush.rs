@@ -1,16 +1,79 @@
 use std::{borrow::Cow, collections::HashMap, error::Error, fs::File, io::Read, path::Path};
 
 use wgpu::{
-    BindGroup, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState,
-    RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, VertexState,
+    BindGroup, BlendState, ColorTargetState, FragmentState, MultisampleState,
+    PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor,
+    ShaderModule, ShaderModuleDescriptor, VertexState,
 };
 
 use crate::{Binder, ToBinder, Vertex};
 
 use super::Graphics;
 
+pub enum AlphaBlend {
+    Default,
+    Premultiplied,
+    Additive,
+    SoftAdditive,
+    Multiplied,
+}
+impl Into<wgpu::BlendComponent> for AlphaBlend {
+    fn into(self) -> wgpu::BlendComponent {
+        match self {
+            AlphaBlend::Default => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::SrcAlpha,
+                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                operation: wgpu::BlendOperation::Add,
+            },
+            AlphaBlend::Premultiplied => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::One,
+                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                operation: wgpu::BlendOperation::Add,
+            },
+            AlphaBlend::Additive => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::One,
+                dst_factor: wgpu::BlendFactor::One,
+                operation: wgpu::BlendOperation::Add,
+            },
+            AlphaBlend::SoftAdditive => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::OneMinusDst,
+                dst_factor: wgpu::BlendFactor::One,
+                operation: wgpu::BlendOperation::Add,
+            },
+            AlphaBlend::Multiplied => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::Dst,
+                dst_factor: wgpu::BlendFactor::Zero,
+                operation: wgpu::BlendOperation::Add,
+            },
+        }
+    }
+}
+
+pub struct BrushDesc {
+    pub blend: wgpu::BlendState,
+}
+impl Default for BrushDesc {
+    fn default() -> Self {
+        Self {
+            blend: BlendState {
+                color: wgpu::BlendComponent {
+                    src_factor: wgpu::BlendFactor::Src,
+                    dst_factor: wgpu::BlendFactor::OneMinusSrc,
+                    operation: wgpu::BlendOperation::Add,
+                },
+                alpha: wgpu::BlendComponent {
+                    src_factor: wgpu::BlendFactor::SrcAlpha,
+                    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                    operation: wgpu::BlendOperation::Add,
+                },
+            },
+        }
+    }
+}
+
 ///Used to tell the GPU how to draw the shapes provided.
 pub struct Brush {
+    desc: BrushDesc,
     compiled_shader: ShaderModule,
     cached_pipeline: Option<RenderPipeline>,
     cached_bindings: Vec<(u32, BindGroup)>,
@@ -20,15 +83,17 @@ pub struct Brush {
 
 impl Brush {
     /// Create brush from shader path.
-    pub fn from_path(graphics: &impl Graphics, shader_path: &Path) -> Result<Self, Box<dyn Error>> {
+    pub fn from_path(
+        desc: BrushDesc, graphics: &impl Graphics, shader_path: &Path,
+    ) -> Result<Self, Box<dyn Error>> {
         let mut source = String::new();
         File::open(shader_path)?.read_to_string(&mut source)?;
-        Self::from_source(graphics, source)
+        Self::from_source(desc, graphics, source)
     }
 
     /// Create brush directly providing the shader source.
     pub fn from_source(
-        graphics: &impl Graphics, shader_source: String,
+        desc: BrushDesc, graphics: &impl Graphics, shader_source: String,
     ) -> Result<Self, Box<dyn Error>> {
         let device = graphics.get_device();
         let shader = device.create_shader_module(ShaderModuleDescriptor {
@@ -36,6 +101,7 @@ impl Brush {
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(shader_source.as_str())),
         });
         Ok(Self {
+            desc,
             compiled_shader: shader,
             assets_to_bind: HashMap::new(),
             cached_bindings: Vec::new(),
@@ -88,12 +154,14 @@ impl Brush {
             fragment: Some(FragmentState {
                 module: &self.compiled_shader,
                 entry_point: "fs_main",
-                targets: &[Some(
-                    graphics
+                targets: &[Some(ColorTargetState {
+                    write_mask: wgpu::ColorWrites::ALL,
+                    format: graphics
                         .get_surface()
                         .get_supported_formats(graphics.get_adapter())[0]
                         .into(),
-                )],
+                    blend: Some(self.desc.blend),
+                })],
             }),
             primitive: PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,

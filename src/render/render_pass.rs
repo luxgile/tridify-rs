@@ -25,66 +25,62 @@ impl Default for RenderOptions {
 }
 
 /// Manages the current frame being drawn.
-pub struct Frame {
-    options: Option<RenderOptions>,
-    frame_texture: SurfaceTexture,
-    frame_view: TextureView,
+pub struct RenderPass<'a> {
+    pass: wgpu::RenderPass<'a>,
     encoder: CommandEncoder,
+    frame_view: TextureView,
+    frame_texture: SurfaceTexture,
 }
 
-impl Frame {
-    pub fn new(
-        graphics: &impl Graphics, options: Option<RenderOptions>,
-    ) -> Result<Self, Box<dyn Error>> {
+impl<'a> RenderPass<'a> {
+    pub fn new(graphics: &impl Graphics, options: RenderOptions) -> Result<Self, Box<dyn Error>> {
         let frame_texture = graphics.get_surface().get_current_texture()?;
         let frame_view = frame_texture
             .texture
             .create_view(&TextureViewDescriptor::default());
-        let encoder = graphics
+        let mut encoder = graphics
             .get_device()
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
-        Ok(Self {
-            options,
-            frame_texture,
-            frame_view,
-            encoder,
-        })
-    }
 
-    ///Draw batch on the canvas.
-    pub fn render(&mut self, graphics: &impl Graphics, brush: &mut Brush, buffer: &ShapeBuffer) {
-        let mut pass = self.encoder.begin_render_pass(&RenderPassDescriptor {
+        let pass = encoder.begin_render_pass(&RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(RenderPassColorAttachment {
-                view: &self.frame_view,
+                view: &frame_view,
                 resolve_target: None,
                 ops: Operations {
-                    load: wgpu::LoadOp::Clear(
-                        self.options
-                            .get_or_insert(RenderOptions::default())
-                            .clear_color
-                            .into(),
-                    ),
+                    load: wgpu::LoadOp::Clear(options.clear_color.into()),
                     store: true,
                 },
             })],
             depth_stencil_attachment: None,
         });
 
+        Ok(Self {
+            pass,
+            encoder,
+            frame_view,
+            frame_texture,
+        })
+    }
+
+    ///Draw batch on the canvas.
+    pub fn render(&mut self, graphics: &impl Graphics, brush: &mut Brush, buffer: &ShapeBuffer) {
         if brush.needs_update() {
             brush.update(graphics);
         }
 
         let pipeline = brush.get_pipeline();
-        pass.set_pipeline(pipeline);
+        self.pass.set_pipeline(pipeline);
         let bind_groups = brush.get_bind_groups();
         bind_groups
             .iter()
-            .for_each(|(id, bg)| pass.set_bind_group(*id, bg, &[]));
+            .for_each(|(id, bg)| self.pass.set_bind_group(*id, bg, &[]));
 
-        pass.set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
-        pass.set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-        pass.draw_indexed(0..buffer.index_len, 0, 0..1);
+        self.pass
+            .set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
+        self.pass
+            .set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+        self.pass.draw_indexed(0..buffer.index_len, 0, 0..1);
     }
 
     ///Finishes frame drawing.
