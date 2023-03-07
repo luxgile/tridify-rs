@@ -2,10 +2,10 @@ use std::rc::Rc;
 
 use wgpu::{util::DeviceExt, Buffer};
 
-use crate::{Graphics, ToBinder};
+use crate::{ToBinder, Window, WindowCtx};
 
 pub trait ToGpuBuf {
-    fn build_buffer(&self, graphics: &impl Graphics) -> GpuBuffer;
+    fn build_buffer(&self, wnd: &WindowCtx) -> GpuBuffer;
 }
 
 /// Handle to a GPU buffer.
@@ -15,24 +15,22 @@ pub struct GpuBuffer {
 
 impl GpuBuffer {
     /// Creates a new buffer with uninitialized data.
-    pub fn new(graphics: &impl Graphics) -> Self {
-        let buffer = graphics
-            .get_device()
-            .create_buffer(&wgpu::BufferDescriptor {
-                label: None,
-                size: todo!(),
-                usage: todo!(),
-                mapped_at_creation: todo!(),
-            });
+    pub fn new(wnd: &WindowCtx) -> Self {
+        let buffer = wnd.device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size: todo!(),
+            usage: todo!(),
+            mapped_at_creation: todo!(),
+        });
         Self {
             buffer: Rc::new(buffer),
         }
     }
 
     /// Creates a buffer with the given bytes.
-    pub fn init(graphics: &impl Graphics, data: &[u8]) -> Self {
-        let buffer = graphics
-            .get_device()
+    pub fn init(wnd: &WindowCtx, data: &[u8]) -> Self {
+        let buffer = wnd
+            .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: None,
                 contents: data,
@@ -46,8 +44,8 @@ impl GpuBuffer {
     }
 
     /// Update buffer GPU data with bytes provided.
-    pub fn write(&mut self, graphics: &impl Graphics, data: &[u8]) {
-        graphics.get_queue().write_buffer(&self.buffer, 0, data);
+    pub fn write(&mut self, wnd: &WindowCtx, data: &[u8]) {
+        wnd.queue.write_buffer(&self.buffer, 0, data);
     }
 }
 

@@ -7,7 +7,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Tridify::new();
     let window = app.create_window()?;
-    let window_view = window.view();
+    let window_view = window.ctx();
 
     //Load texture from path.
     let texture = Texture::from_path(
@@ -25,10 +25,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut camera_buf = camera.build_buffer(window_view);
 
     //Create brush to draw the shapes.
-    let mut brush = Brush::from_path(
+    let mut brush = Brush::from_source(
         BrushDesc::default(),
         window_view,
-        Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\3d_basic.wgsl"#),
+        include_str!("3d_shader.wgsl").to_string(),
     )?;
     // Bind camera, sampler and texture to the brush. Make sure group_index and loc_index are the same as
     // in the shader.
@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Vec3::ONE * 5.,
             Color::WHITE,
         )
-        .bake_buffers(window_view)?;
+        .bake_buffers(window_view);
 
     //Setup the window render loop.
     window.set_render_loop(move |wnd, frame_ctx| {
@@ -54,12 +54,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         //Updating the gpu buffer will update all brushes binded as well.
         camera_buf.write(wnd, bytemuck::cast_slice(&mvp.to_cols_array()));
 
-        //Creating and drawing render frame using brush and buffer.
-        let mut frame = wnd
-            .start_render_pass(RenderOptions::default())
-            .expect("Issue creating frame.");
-        frame.render(wnd, &mut brush, &shape_buffer);
-        frame.finish(wnd).expect("Error finishing frame.");
+        //Render frame as usual.
+        let mut pass_builder = wnd.create_render_builder();
+        let mut render_pass = pass_builder.build_render_pass(RenderOptions::default());
+        render_pass.render_shapes(wnd, &mut brush, &shape_buffer);
+        render_pass.finish();
+        pass_builder.finish_render(wnd);
     });
 
     // Start program.

@@ -6,9 +6,7 @@ use wgpu::{
     ShaderModule, ShaderModuleDescriptor, VertexState,
 };
 
-use crate::{Binder, ToBinder, Vertex};
-
-use super::Graphics;
+use crate::{Binder, ToBinder, Vertex, WindowCtx};
 
 pub enum AlphaBlend {
     Default,
@@ -84,18 +82,18 @@ pub struct Brush {
 impl Brush {
     /// Create brush from shader path.
     pub fn from_path(
-        desc: BrushDesc, graphics: &impl Graphics, shader_path: &Path,
+        desc: BrushDesc, wnd: &WindowCtx, shader_path: &Path,
     ) -> Result<Self, Box<dyn Error>> {
         let mut source = String::new();
         File::open(shader_path)?.read_to_string(&mut source)?;
-        Self::from_source(desc, graphics, source)
+        Self::from_source(desc, wnd, source)
     }
 
     /// Create brush directly providing the shader source.
     pub fn from_source(
-        desc: BrushDesc, graphics: &impl Graphics, shader_source: String,
+        desc: BrushDesc, wnd: &WindowCtx, shader_source: String,
     ) -> Result<Self, Box<dyn Error>> {
-        let device = graphics.get_device();
+        let device = &wnd.device;
         let shader = device.create_shader_module(ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(shader_source.as_str())),
@@ -128,12 +126,12 @@ impl Brush {
     pub fn needs_update(&self) -> bool { self.needs_update }
 
     /// Update GPU bindings and pipelines with current brush data.
-    pub fn update(&mut self, graphics: &impl Graphics) {
-        let device = graphics.get_device();
+    pub fn update(&mut self, wnd: &WindowCtx) {
+        let device = &wnd.device;
         self.cached_bindings.clear();
         let mut bgls = Vec::new();
         for (i, binder) in self.assets_to_bind.iter() {
-            let (bgl, bg) = binder.bake(graphics);
+            let (bgl, bg) = binder.bake(wnd);
             bgls.push((i, bgl));
             self.cached_bindings.push((*i, bg));
         }
@@ -156,10 +154,7 @@ impl Brush {
                 entry_point: "fs_main",
                 targets: &[Some(ColorTargetState {
                     write_mask: wgpu::ColorWrites::ALL,
-                    format: graphics
-                        .get_surface()
-                        .get_supported_formats(graphics.get_adapter())[0]
-                        .into(),
+                    format: wnd.surface.get_supported_formats(&wnd.adapter)[0].into(),
                     blend: Some(self.desc.blend),
                 })],
             }),

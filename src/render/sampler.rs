@@ -1,25 +1,23 @@
 use wgpu::{ShaderModel, ShaderStages};
 
-use crate::{Graphics, ToBinder};
+use crate::{ToBinder, WindowCtx};
 
 /// Representation on how a texture will be drawn into a shape.
 pub struct Sampler {
     inner_sampler: wgpu::Sampler,
 }
 impl Sampler {
-    pub fn new_default(graphics: &impl Graphics) -> Self {
+    pub fn new_default(wnd: &WindowCtx) -> Self {
         Self {
-            inner_sampler: graphics
-                .get_device()
-                .create_sampler(&wgpu::SamplerDescriptor {
-                    address_mode_u: wgpu::AddressMode::ClampToEdge,
-                    address_mode_v: wgpu::AddressMode::ClampToEdge,
-                    address_mode_w: wgpu::AddressMode::ClampToEdge,
-                    mag_filter: wgpu::FilterMode::Linear,
-                    min_filter: wgpu::FilterMode::Nearest,
-                    mipmap_filter: wgpu::FilterMode::Nearest,
-                    ..Default::default()
-                }),
+            inner_sampler: wnd.device.create_sampler(&wgpu::SamplerDescriptor {
+                address_mode_u: wgpu::AddressMode::ClampToEdge,
+                address_mode_v: wgpu::AddressMode::ClampToEdge,
+                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                mag_filter: wgpu::FilterMode::Linear,
+                min_filter: wgpu::FilterMode::Nearest,
+                mipmap_filter: wgpu::FilterMode::Nearest,
+                ..Default::default()
+            }),
         }
     }
 }

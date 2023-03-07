@@ -49,3 +49,14 @@ impl Into<wgpu::Color> for Color {
         }
     }
 }
+
+impl From<egui::epaint::Color32> for Color {
+    fn from(value: egui::epaint::Color32) -> Self {
+        Color {
+            r: value.r() as f32 / 255.,
+            g: value.g() as f32 / 255.,
+            b: value.b() as f32 / 255.,
+            a: value.a() as f32 / 255.,
+        }
+    }
+}

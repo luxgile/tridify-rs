@@ -6,11 +6,15 @@ use wgpu::{
     Buffer, BufferUsages,
 };
 
-use crate::{vertex, Color, Graphics, Rect, Vertex};
+use crate::{vertex, Color, Rect, Vertex, WindowCtx};
 
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub tris: Vec<u32>,
+}
+
+impl Mesh {
+    pub fn new(vertices: Vec<Vertex>, tris: Vec<u32>) -> Self { Self { vertices, tris } }
 }
 
 // ///Buffers created from the batch and prepared to be sent directly to the GPU
@@ -39,8 +43,8 @@ impl ShapeBatch {
     }
 
     ///Create buffers based on current batch data.
-    pub fn bake_buffers(&self, graphics: &impl Graphics) -> Result<ShapeBuffer, Box<dyn Error>> {
-        let device = graphics.get_device();
+    pub fn bake_buffers(&self, ctx: &WindowCtx) -> ShapeBuffer {
+        let device = &ctx.device;
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&self.vertices),
@@ -51,11 +55,11 @@ impl ShapeBatch {
             contents: bytemuck::cast_slice(&self.indices),
             usage: BufferUsages::INDEX,
         });
-        Ok(ShapeBuffer {
+        ShapeBuffer {
             vertex_buffer,
             index_buffer,
             index_len: self.indices.len() as u32,
-        })
+        }
     }
 
     pub fn add_mesh(&mut self, mesh: Mesh) -> &mut ShapeBatch {

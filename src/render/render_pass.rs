@@ -6,8 +6,9 @@ use wgpu::{
 };
 
 use crate::core::Color;
-use crate::Graphics;
+use crate::Rect;
 use crate::ShapeBuffer;
+use crate::WindowCtx;
 
 use super::Brush;
 
@@ -24,28 +25,33 @@ impl Default for RenderOptions {
     }
 }
 
-/// Manages the current frame being drawn.
-pub struct RenderPass<'a> {
-    pass: wgpu::RenderPass<'a>,
-    encoder: CommandEncoder,
+pub struct RenderPassBuilder {
+    draw_cmds: CommandEncoder,
     frame_view: TextureView,
     frame_texture: SurfaceTexture,
 }
-
-impl<'a> RenderPass<'a> {
-    pub fn new(graphics: &impl Graphics, options: RenderOptions) -> Result<Self, Box<dyn Error>> {
-        let frame_texture = graphics.get_surface().get_current_texture()?;
+impl RenderPassBuilder {
+    pub fn new(wnd: &WindowCtx) -> Result<Self, Box<dyn Error>> {
+        let frame_texture = wnd.surface.get_current_texture()?;
         let frame_view = frame_texture
             .texture
             .create_view(&TextureViewDescriptor::default());
-        let mut encoder = graphics
-            .get_device()
+        let mut draw_cmds = wnd
+            .device
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
 
-        let pass = encoder.begin_render_pass(&RenderPassDescriptor {
+        Ok(Self {
+            draw_cmds,
+            frame_view,
+            frame_texture,
+        })
+    }
+
+    pub fn build_render_pass(&mut self, options: RenderOptions) -> RenderPass {
+        let pass = self.draw_cmds.begin_render_pass(&RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(RenderPassColorAttachment {
-                view: &frame_view,
+                view: &self.frame_view,
                 resolve_target: None,
                 ops: Operations {
                     load: wgpu::LoadOp::Clear(options.clear_color.into()),
@@ -54,21 +60,43 @@ impl<'a> RenderPass<'a> {
             })],
             depth_stencil_attachment: None,
         });
+        RenderPass { pass }
+    }
 
-        Ok(Self {
-            pass,
-            encoder,
-            frame_view,
-            frame_texture,
-        })
+    pub fn finish_render(self, wnd: &WindowCtx) {
+        wnd.queue.submit(Some(self.draw_cmds.finish()));
+        self.frame_texture.present();
+    }
+}
+
+/// Manages the current frame being drawn.
+pub struct RenderPass<'a> {
+    pass: wgpu::RenderPass<'a>,
+}
+
+impl<'a> RenderPass<'a> {
+    /// Rect provided needs to be in pixels.
+    pub fn set_scissor(&mut self, rect: &Rect) {
+        self.pass.set_scissor_rect(
+            rect.pos.x as u32,
+            rect.pos.y as u32,
+            rect.size.x as u32,
+            rect.size.y as u32,
+        );
     }
 
     ///Draw batch on the canvas.
-    pub fn render(&mut self, graphics: &impl Graphics, brush: &mut Brush, buffer: &ShapeBuffer) {
+    pub fn render_shapes(
+        &mut self, wnd: &WindowCtx, brush: &'a mut Brush, buffer: &'a ShapeBuffer,
+    ) {
         if brush.needs_update() {
-            brush.update(graphics);
+            brush.update(wnd);
         }
+        self.render_shapes_cached(brush, buffer);
+    }
 
+    /// Draw batch on canvas. Does not check if brush requires any changes.
+    pub fn render_shapes_cached(&mut self, brush: &'a Brush, buffer: &'a ShapeBuffer) {
         let pipeline = brush.get_pipeline();
         self.pass.set_pipeline(pipeline);
         let bind_groups = brush.get_bind_groups();
@@ -82,12 +110,6 @@ impl<'a> RenderPass<'a> {
             .set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         self.pass.draw_indexed(0..buffer.index_len, 0, 0..1);
     }
-
-    ///Finishes frame drawing.
-    pub fn finish(mut self, graphics: &impl Graphics) -> Result<(), &'static str> {
-        let queue = graphics.get_queue();
-        queue.submit(Some(self.encoder.finish()));
-        self.frame_texture.present();
-        Ok(())
+    pub fn finish(self) {
     }
 }

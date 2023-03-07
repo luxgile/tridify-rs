@@ -1,4 +1,4 @@
-use std::{error::Error, path::Path};
+use std::error::Error;
 
 use tridify_rs::*;
 
@@ -6,14 +6,15 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Tridify::new();
     let window = app.create_window()?;
-    //Window view stores WGPU context and devices. Must be used in most GPU functions.
-    let window_view = window.view();
+
+    //Window context stores WGPU context and devices. Must be used in most GPU functions.
+    let window_ctx = window.ctx();
 
     //Create brush to draw the shapes.
-    let mut brush = Brush::from_path(
+    let mut brush = Brush::from_source(
         BrushDesc::default(),
-        window_view,
-        Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\shared_assets\basic.wgsl"#),
+        window_ctx,
+        include_str!("shader.wgsl").to_string(),
     )?;
 
     //Create a shape batch, add a triangle to it and create a GPU buffer with mesh data.
@@ -23,18 +24,21 @@ pub fn main() -> Result<(), Box<dyn Error>> {
             vertex!(0.5, -0.5, 0.0, Color::SILVER),
             vertex!(0.0, 0.5, 0.0, Color::SILVER),
         ])
-        .bake_buffers(window_view)?;
+        .bake_buffers(window_ctx);
 
-    //Setup the window render loop.
     window.set_render_loop(move |wnd, _| {
-        //Create a frame, render shapes with brush and finish it to draw into the screen.
-        let mut render_pass = wnd
-            .start_render_pass(RenderOptions::default())
-            .expect("Issue creating frame.");
-        render_pass.render(wnd, &mut brush, &buffer);
-        render_pass.finish(wnd).expect("Error finishing frame.");
+        //Create a render pass builder which we will use to define multiple render passes (In this case, only one).
+        let mut pass_builder = wnd.create_render_builder();
+
+        //Build a render pass which will take care of the brush and shapes to draw them and binding it with the GPU.
+        let mut render_pass = pass_builder.build_render_pass(RenderOptions::default());
+        render_pass.render_shapes(wnd, &mut brush, &buffer);
+        render_pass.finish();
+
+        //Execute all drawing commands from all render passes and render into screen.
+        pass_builder.finish_render(wnd);
     });
 
-    //Start program.
+    //Start program logic cycle.
     app.start(());
 }

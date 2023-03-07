@@ -4,7 +4,7 @@ use wgpu::{
     BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
 };
 
-use crate::Graphics;
+use crate::WindowCtx;
 
 /// Provides wgpu binding data for shaders.
 pub trait ToBinder {
@@ -29,7 +29,7 @@ impl Binder {
     }
 
     /// Create GPU bindings to link with the render pipeline.
-    pub fn bake<'a>(&'a self, graphics: &impl Graphics) -> (BindGroupLayout, BindGroup) {
+    pub fn bake<'a>(&'a self, wnd: &WindowCtx) -> (BindGroupLayout, BindGroup) {
         let layout_entries = self
             .bindings
             .iter()
@@ -42,23 +42,21 @@ impl Binder {
             bind_entries.push((*i, borrowed_tobind));
         }
 
-        let bgl = graphics
-            .get_device()
+        let bgl = wnd
+            .device
             .create_bind_group_layout(&BindGroupLayoutDescriptor {
                 label: None,
                 entries: &layout_entries,
             });
 
-        let bg = graphics
-            .get_device()
-            .create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &bgl,
-                entries: &bind_entries
-                    .iter()
-                    .map(|(i, x)| x.get_group(*i))
-                    .collect::<Vec<_>>(),
-                label: None,
-            });
+        let bg = wnd.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &bgl,
+            entries: &bind_entries
+                .iter()
+                .map(|(i, x)| x.get_group(*i))
+                .collect::<Vec<_>>(),
+            label: None,
+        });
 
         (bgl, bg)
     }

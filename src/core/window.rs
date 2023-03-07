@@ -3,38 +3,37 @@ use std::{
     time::{Duration, Instant},
 };
 
-use glam::{UVec2, Vec2};
-use wgpu::{Adapter, Device, Queue};
+use glam::UVec2;
+
 use winit::dpi::LogicalSize;
 
-use crate::Graphics;
-use crate::{FrameContext, RenderOptions, RenderPass};
+use crate::{FrameContext, RenderOptions, RenderPass, RenderPassBuilder};
 
 /// Desktop window representation. Stores it's own GPU context and render loop.
 pub struct Window {
-    pub(crate) wnd: WindowView,
-    pub(crate) user_loop: Option<Box<dyn FnMut(&mut WindowView, &FrameContext)>>,
+    pub(crate) ctx: WindowCtx,
+    pub(crate) user_loop: Option<Box<dyn FnMut(&mut WindowCtx, &FrameContext)>>,
 }
 impl Window {
     /// Step through render loop once.
     pub fn render_step(&mut self, frame_ctx: &FrameContext) {
         if let Some(user_loop) = self.user_loop.as_mut() {
-            user_loop.as_mut()(&mut self.wnd, frame_ctx);
+            user_loop.as_mut()(&mut self.ctx, frame_ctx);
         }
     }
 
     /// Define closure that will be called each time the window is rendered
-    pub fn set_render_loop(&mut self, func: impl FnMut(&mut WindowView, &FrameContext) + 'static) {
+    pub fn set_render_loop(&mut self, func: impl FnMut(&mut WindowCtx, &FrameContext) + 'static) {
         self.user_loop = Some(Box::new(func));
     }
 
-    pub fn view(&self) -> &WindowView { &self.wnd }
-    pub fn view_mut(&mut self) -> &mut WindowView { &mut self.wnd }
+    pub fn ctx(&self) -> &WindowCtx { &self.ctx }
+    pub fn view_mut(&mut self) -> &mut WindowCtx { &mut self.ctx }
 }
 
 /// Holds GPU context, devices, surfaces, etc. for a window. Must be used on most GPU related
 /// functions.
-pub struct WindowView {
+pub struct WindowCtx {
     pub(crate) created_time: Instant,
     pub(crate) last_draw_time: Instant,
 
@@ -46,17 +45,8 @@ pub struct WindowView {
     pub(crate) device: wgpu::Device,
     pub(crate) queue: wgpu::Queue,
 }
-impl Graphics for WindowView {
-    fn get_adapter(&self) -> &Adapter { &self.adapter }
-    fn get_device(&self) -> &Device { &self.device }
-    fn get_queue(&self) -> &Queue { &self.queue }
-    fn get_surface(&self) -> &wgpu::Surface { &self.surface }
-    fn get_screen_size(&self) -> UVec2 { self.get_wnd_size() }
-    fn start_render_pass(&self, options: RenderOptions) -> Result<RenderPass, Box<dyn Error>> {
-        self.start_render_pass(options)
-    }
-}
-impl WindowView {
+
+impl WindowCtx {
     pub fn set_wnd_size(&mut self, size: UVec2) {
         self.winit_wnd
             .set_inner_size(LogicalSize::new(size.x, size.y));
@@ -80,8 +70,10 @@ impl WindowView {
     pub fn redraw(&self) { self.winit_wnd.request_redraw(); }
 
     /// Create a new frame that will be drawn to.
-    pub fn start_render_pass(&self, options: RenderOptions) -> Result<RenderPass, Box<dyn Error>> {
-        RenderPass::new(self, options)
+    pub fn create_render_builder(&self) -> RenderPassBuilder {
+        RenderPassBuilder::new(self).expect(
+            "Issue creating render pass builder. Make sure rendering cycle is being done properly.",
+        )
     }
 
     /// Time the window has been running since its creation.

@@ -16,7 +16,7 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{RenderOptions, RenderPass, Texture, Window, WindowView};
+use crate::{RenderOptions, RenderPass, Texture, Window, WindowCtx};
 
 /// Represents basic information for a given windows rendering frame.
 pub struct FrameContext<'a> {
@@ -103,7 +103,7 @@ impl Tridify {
 
         let window = Window {
             user_loop: None,
-            wnd: WindowView {
+            ctx: WindowCtx {
                 created_time: Instant::now(),
                 last_draw_time: Instant::now(),
                 winit_wnd: wnd,
@@ -137,7 +137,7 @@ impl Tridify {
                 }
                 WindowEvent::Resized(size) => {
                     let wnd = self.get_window_mut(&window_id).unwrap();
-                    wnd.wnd
+                    wnd.ctx
                         .set_wnd_gpu_size(UVec2::new(size.width, size.height))
                 }
                 _ => {}
@@ -145,7 +145,7 @@ impl Tridify {
             Event::MainEventsCleared => {
                 for (id, wnd) in self.windows.iter_mut() {
                     //TODO: User configurable
-                    if wnd.view().last_draw_time.elapsed() >= Duration::from_millis(16.6 as u64) {
+                    if wnd.ctx().last_draw_time.elapsed() >= Duration::from_millis(16.6 as u64) {
                         wnd.view_mut().redraw();
                         wnd.view_mut().last_draw_time = Instant::now();
                     }
@@ -154,8 +154,8 @@ impl Tridify {
             Event::RedrawRequested(id) => {
                 let wnd = self.get_window_mut(&id).unwrap();
                 let frame_ctx = FrameContext {
-                    delta_time: wnd.view().last_draw_time.elapsed().as_secs_f64(),
-                    elapsed_time: wnd.view().time_running().as_secs_f64(),
+                    delta_time: wnd.ctx().last_draw_time.elapsed().as_secs_f64(),
+                    elapsed_time: wnd.ctx().time_running().as_secs_f64(),
                     // user_ctx: &user_ctx,
                     eloop,
                 };
@@ -172,12 +172,4 @@ impl Tridify {
     pub fn get_window_mut(&mut self, id: &WindowId) -> Result<&mut Window, &str> {
         self.windows.get_mut(id).ok_or("No window found.")
     }
-}
-pub trait Graphics {
-    fn get_adapter(&self) -> &Adapter;
-    fn get_device(&self) -> &Device;
-    fn get_queue(&self) -> &Queue;
-    fn get_surface(&self) -> &Surface;
-    fn start_render_pass(&self, options: RenderOptions) -> Result<RenderPass, Box<dyn Error>>;
-    fn get_screen_size(&self) -> UVec2;
 }

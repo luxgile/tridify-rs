@@ -6,7 +6,7 @@ use wgpu::{
     TextureFormat, TextureUsages, TextureViewDescriptor,
 };
 
-use crate::{Graphics, ToBinder};
+use crate::{ToBinder, WindowCtx};
 
 bitflags::bitflags! {
     /// Specifies how the texture will be used for optimizations.
@@ -85,20 +85,20 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn from_path(graphics: &impl Graphics, path: &Path) -> Self {
+    pub fn from_path(wnd: &WindowCtx, path: &Path) -> Self {
         let image = image::open(path).expect("Error loading image.");
         let desc = TextureDesc {
             size: TextureSize::D2(UVec2::new(image.width(), image.height())),
             usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
         };
-        let mut texture = Self::new(graphics, desc);
-        texture.lazy_write_data(graphics, &image.to_rgba8());
+        let texture = Self::new(wnd, desc);
+        texture.lazy_write_data(wnd, &image.to_rgba8());
         texture
     }
 
-    pub fn new(graphics: &impl Graphics, desc: TextureDesc) -> Self {
+    pub fn new(wnd: &WindowCtx, desc: TextureDesc) -> Self {
         let size = desc.size.get_size();
-        let texture = graphics.get_device().create_texture(&TextureDescriptor {
+        let texture = wnd.device.create_texture(&TextureDescriptor {
             label: None,
             size: wgpu::Extent3d {
                 width: size.x,
@@ -120,9 +120,9 @@ impl Texture {
     }
 
     ///Writes data into the texture lazily, which means it won't be done until all GPU commands are sent.
-    pub fn lazy_write_data(&self, graphics: &impl Graphics, data: &[u8]) {
+    pub fn lazy_write_data(&self, wnd: &WindowCtx, data: &[u8]) {
         let size = self.desc.size.get_size();
-        graphics.get_queue().write_texture(
+        wnd.queue.write_texture(
             ImageCopyTexture {
                 texture: &self.texture,
                 mip_level: 0,
