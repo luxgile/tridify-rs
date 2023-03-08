@@ -6,7 +6,7 @@ use wgpu::{
     ShaderModule, ShaderModuleDescriptor, VertexState,
 };
 
-use crate::{Binder, ToBinder, Vertex, WindowCtx};
+use crate::{Binder, GpuCtx, ToBinder, Vertex};
 
 pub enum AlphaBlend {
     Default,
@@ -82,7 +82,7 @@ pub struct Brush {
 impl Brush {
     /// Create brush from shader path.
     pub fn from_path(
-        desc: BrushDesc, wnd: &WindowCtx, shader_path: &Path,
+        desc: BrushDesc, wnd: &GpuCtx, shader_path: &Path,
     ) -> Result<Self, Box<dyn Error>> {
         let mut source = String::new();
         File::open(shader_path)?.read_to_string(&mut source)?;
@@ -91,7 +91,7 @@ impl Brush {
 
     /// Create brush directly providing the shader source.
     pub fn from_source(
-        desc: BrushDesc, wnd: &WindowCtx, shader_source: String,
+        desc: BrushDesc, wnd: &GpuCtx, shader_source: String,
     ) -> Result<Self, Box<dyn Error>> {
         let device = &wnd.device;
         let shader = device.create_shader_module(ShaderModuleDescriptor {
@@ -126,7 +126,7 @@ impl Brush {
     pub fn needs_update(&self) -> bool { self.needs_update }
 
     /// Update GPU bindings and pipelines with current brush data.
-    pub fn update(&mut self, wnd: &WindowCtx) {
+    pub fn update(&mut self, wnd: &GpuCtx) {
         let device = &wnd.device;
         self.cached_bindings.clear();
         let mut bgls = Vec::new();

@@ -6,9 +6,9 @@ use wgpu::{
 };
 
 use crate::core::Color;
+use crate::GpuCtx;
 use crate::Rect;
 use crate::ShapeBuffer;
-use crate::WindowCtx;
 
 use super::Brush;
 
@@ -31,7 +31,7 @@ pub struct RenderPassBuilder {
     frame_texture: SurfaceTexture,
 }
 impl RenderPassBuilder {
-    pub fn new(wnd: &WindowCtx) -> Result<Self, Box<dyn Error>> {
+    pub fn new(wnd: &GpuCtx) -> Result<Self, Box<dyn Error>> {
         let frame_texture = wnd.surface.get_current_texture()?;
         let frame_view = frame_texture
             .texture
@@ -63,7 +63,7 @@ impl RenderPassBuilder {
         RenderPass { pass }
     }
 
-    pub fn finish_render(self, wnd: &WindowCtx) {
+    pub fn finish_render(self, wnd: &GpuCtx) {
         wnd.queue.submit(Some(self.draw_cmds.finish()));
         self.frame_texture.present();
     }
@@ -86,9 +86,7 @@ impl<'a> RenderPass<'a> {
     }
 
     ///Draw batch on the canvas.
-    pub fn render_shapes(
-        &mut self, wnd: &WindowCtx, brush: &'a mut Brush, buffer: &'a ShapeBuffer,
-    ) {
+    pub fn render_shapes(&mut self, wnd: &GpuCtx, brush: &'a mut Brush, buffer: &'a ShapeBuffer) {
         if brush.needs_update() {
             brush.update(wnd);
         }

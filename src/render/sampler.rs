@@ -1,13 +1,13 @@
 use wgpu::{ShaderModel, ShaderStages};
 
-use crate::{ToBinder, WindowCtx};
+use crate::{GpuCtx, ToBinder};
 
 /// Representation on how a texture will be drawn into a shape.
 pub struct Sampler {
     inner_sampler: wgpu::Sampler,
 }
 impl Sampler {
-    pub fn new_default(wnd: &WindowCtx) -> Self {
+    pub fn new_default(wnd: &GpuCtx) -> Self {
         Self {
             inner_sampler: wnd.device.create_sampler(&wgpu::SamplerDescriptor {
                 address_mode_u: wgpu::AddressMode::ClampToEdge,

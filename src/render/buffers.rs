@@ -6,7 +6,7 @@ use wgpu::{
     Buffer, BufferUsages,
 };
 
-use crate::{vertex, Color, Rect, Vertex, WindowCtx};
+use crate::{vertex, Color, GpuCtx, Rect, Vertex};
 
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
@@ -43,7 +43,7 @@ impl ShapeBatch {
     }
 
     ///Create buffers based on current batch data.
-    pub fn bake_buffers(&self, ctx: &WindowCtx) -> ShapeBuffer {
+    pub fn bake_buffers(&self, ctx: &GpuCtx) -> ShapeBuffer {
         let device = &ctx.device;
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: None,

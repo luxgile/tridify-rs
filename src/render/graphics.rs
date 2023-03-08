@@ -16,7 +16,7 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{RenderOptions, RenderPass, Texture, Window, WindowCtx};
+use crate::{GpuCtx, RenderOptions, RenderPass, Texture, Window};
 
 /// Represents basic information for a given windows rendering frame.
 pub struct FrameContext<'a> {
@@ -103,7 +103,7 @@ impl Tridify {
 
         let window = Window {
             user_loop: None,
-            ctx: WindowCtx {
+            ctx: GpuCtx {
                 created_time: Instant::now(),
                 last_draw_time: Instant::now(),
                 winit_wnd: wnd,

@@ -7,27 +7,27 @@ fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Tridify::new();
     let window = app.create_window()?;
-    let window_view = window.ctx();
+    let gpu_ctx = window.ctx();
 
     //Load texture from path.
     let texture = Texture::from_path(
-        window_view,
+        gpu_ctx,
         Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\draw_cube\texture.png"#),
     );
 
     //Sampler defines how the texture will be rendered in shapes.
-    let sampler = Sampler::new_default(window_view);
+    let sampler = Sampler::new_default(gpu_ctx);
 
     let camera = Camera::new(
         Transform::from_look_at(Vec3::NEG_Z * 10.0 + Vec3::Y * 10.0, Vec3::ZERO, Vec3::Y),
         Projection::default(),
     );
-    let mut camera_buf = camera.build_buffer(window_view);
+    let mut camera_buf = camera.build_buffer(gpu_ctx);
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_source(
         BrushDesc::default(),
-        window_view,
+        gpu_ctx,
         include_str!("3d_shader.wgsl").to_string(),
     )?;
     // Bind camera, sampler and texture to the brush. Make sure group_index and loc_index are the same as
@@ -44,22 +44,22 @@ fn main() -> Result<(), Box<dyn Error>> {
             Vec3::ONE * 5.,
             Color::WHITE,
         )
-        .bake_buffers(window_view);
+        .bake_buffers(gpu_ctx);
 
     //Setup the window render loop.
-    window.set_render_loop(move |wnd, frame_ctx| {
+    window.set_render_loop(move |gpu, frame_ctx| {
         let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32);
         let mvp = camera.build_camera_matrix() * model;
 
         //Updating the gpu buffer will update all brushes binded as well.
-        camera_buf.write(wnd, bytemuck::cast_slice(&mvp.to_cols_array()));
+        camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
 
         //Render frame as usual.
-        let mut pass_builder = wnd.create_render_builder();
+        let mut pass_builder = gpu.create_render_builder();
         let mut render_pass = pass_builder.build_render_pass(RenderOptions::default());
-        render_pass.render_shapes(wnd, &mut brush, &shape_buffer);
+        render_pass.render_shapes(gpu, &mut brush, &shape_buffer);
         render_pass.finish();
-        pass_builder.finish_render(wnd);
+        pass_builder.finish_render(gpu);
     });
 
     // Start program.

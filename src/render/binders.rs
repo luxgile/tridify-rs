@@ -4,7 +4,7 @@ use wgpu::{
     BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
 };
 
-use crate::WindowCtx;
+use crate::GpuCtx;
 
 /// Provides wgpu binding data for shaders.
 pub trait ToBinder {
@@ -29,7 +29,7 @@ impl Binder {
     }
 
     /// Create GPU bindings to link with the render pipeline.
-    pub fn bake<'a>(&'a self, wnd: &WindowCtx) -> (BindGroupLayout, BindGroup) {
+    pub fn bake<'a>(&'a self, wnd: &GpuCtx) -> (BindGroupLayout, BindGroup) {
         let layout_entries = self
             .bindings
             .iter()

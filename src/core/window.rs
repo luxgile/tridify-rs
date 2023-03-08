@@ -11,8 +11,8 @@ use crate::{FrameContext, RenderOptions, RenderPass, RenderPassBuilder};
 
 /// Desktop window representation. Stores it's own GPU context and render loop.
 pub struct Window {
-    pub(crate) ctx: WindowCtx,
-    pub(crate) user_loop: Option<Box<dyn FnMut(&mut WindowCtx, &FrameContext)>>,
+    pub(crate) ctx: GpuCtx,
+    pub(crate) user_loop: Option<Box<dyn FnMut(&mut GpuCtx, &FrameContext)>>,
 }
 impl Window {
     /// Step through render loop once.
@@ -23,17 +23,17 @@ impl Window {
     }
 
     /// Define closure that will be called each time the window is rendered
-    pub fn set_render_loop(&mut self, func: impl FnMut(&mut WindowCtx, &FrameContext) + 'static) {
+    pub fn set_render_loop(&mut self, func: impl FnMut(&mut GpuCtx, &FrameContext) + 'static) {
         self.user_loop = Some(Box::new(func));
     }
 
-    pub fn ctx(&self) -> &WindowCtx { &self.ctx }
-    pub fn view_mut(&mut self) -> &mut WindowCtx { &mut self.ctx }
+    pub fn ctx(&self) -> &GpuCtx { &self.ctx }
+    pub fn view_mut(&mut self) -> &mut GpuCtx { &mut self.ctx }
 }
 
 /// Holds GPU context, devices, surfaces, etc. for a window. Must be used on most GPU related
 /// functions.
-pub struct WindowCtx {
+pub struct GpuCtx {
     pub(crate) created_time: Instant,
     pub(crate) last_draw_time: Instant,
 
@@ -46,7 +46,7 @@ pub struct WindowCtx {
     pub(crate) queue: wgpu::Queue,
 }
 
-impl WindowCtx {
+impl GpuCtx {
     pub fn set_wnd_size(&mut self, size: UVec2) {
         self.winit_wnd
             .set_inner_size(LogicalSize::new(size.x, size.y));

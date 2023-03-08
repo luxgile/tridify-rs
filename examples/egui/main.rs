@@ -1,6 +1,13 @@
 use std::error::Error;
 
-use egui::RawInput;
+use egui::{
+    epaint::{
+        ahash::{HashMap, HashMapExt, HashSet},
+        ClippedShape, ImageDelta,
+    },
+    plot::Text,
+    FullOutput, RawInput, TextureId, TexturesDelta,
+};
 
 use glam::{UVec2, Vec2};
 use tridify_rs::*;
@@ -10,11 +17,11 @@ pub struct EguiContext {
     input: egui::RawInput,
     brush: Brush,
     draw_batches: Vec<(Rect, ShapeBuffer)>,
-    texture: Option<Texture>,
+    textures: HashMap<TextureId, Texture>,
 }
 
 impl EguiContext {
-    pub fn new(wnd: &WindowCtx) -> Self {
+    pub fn new(wnd: &GpuCtx) -> Self {
         let brush_desc = BrushDesc {
             blend: wgpu::BlendState {
                 alpha: AlphaBlend::Premultiplied.into(),
@@ -28,7 +35,7 @@ impl EguiContext {
         Self {
             brush,
             draw_batches: Vec::new(),
-            texture: None,
+            textures: HashMap::new(),
             ctx: egui::Context::default(),
             input: egui::RawInput::default(),
         }
@@ -36,7 +43,7 @@ impl EguiContext {
 
     pub fn ctx(&self) -> &egui::Context { &self.ctx }
 
-    pub fn start(&mut self, wnd: &WindowCtx) {
+    pub fn start(&mut self, wnd: &GpuCtx) {
         let wnd_size = wnd.get_wnd_size();
         self.input.screen_rect = Some(egui::Rect {
             min: egui::pos2(0., 0.),
@@ -51,9 +58,66 @@ impl EguiContext {
         // }
     }
 
-    pub fn render(&mut self, wnd: &WindowCtx) {
+    pub fn render(&mut self, gpu: &GpuCtx) {
         let output = self.ctx.end_frame();
-        let primitives = self.ctx.tessellate(output.shapes);
+        self.handle_shapes(gpu, output.shapes);
+        self.set_textures(gpu, output.textures_delta.set);
+
+        let mut pass_builder = gpu.create_render_builder();
+        let mut pass = pass_builder.build_render_pass(RenderOptions {
+            clear_color: Color::CLEAR,
+        });
+
+        if self.brush.needs_update() {
+            self.brush.update(gpu);
+        }
+
+        for (scissor, buffer) in &self.draw_batches {
+            pass.set_scissor(scissor);
+            pass.render_shapes_cached(&self.brush, buffer);
+        }
+
+        pass.finish();
+        pass_builder.finish_render(gpu);
+        self.free_textures(output.textures_delta.free);
+    }
+
+    fn set_textures(&mut self, gpu: &GpuCtx, set_textures: Vec<(TextureId, ImageDelta)>) {
+        for (id, image_delta) in set_textures {
+            let image_size = image_delta.image.size();
+            let texture = self.textures.entry(id).or_insert_with(|| {
+                Texture::new(
+                    gpu,
+                    TextureDesc {
+                        size: TextureSize::D2(UVec2::new(
+                            image_size[0] as u32,
+                            image_size[1] as u32,
+                        )),
+                        usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
+                    },
+                    Some(format!("egui texture [{:?}]", id).as_str()),
+                )
+            });
+            match image_delta.image {
+                egui::ImageData::Color(image) => {
+                    let data: Vec<Color> = image.pixels.iter().map(|x| Color::from(*x)).collect();
+                    Self::update_texture(gpu, texture, bytemuck::cast_slice(&data));
+                }
+                egui::ImageData::Font(image) => {
+                    let data: Vec<Color> = image.srgba_pixels(None).map(Color::from).collect();
+                    Self::update_texture(gpu, texture, bytemuck::cast_slice(&data));
+                }
+            }
+        }
+    }
+
+    //TODO: Have in mind delta position to not update all texture
+    fn update_texture(gpu: &GpuCtx, texture: &Texture, data: &[u8]) {
+        texture.write_pixels(gpu, data);
+    }
+
+    fn handle_shapes(&mut self, gpu: &GpuCtx, shapes: Vec<ClippedShape>) {
+        let primitives = self.ctx.tessellate(shapes);
         for primitive in primitives {
             let rect = primitive.clip_rect;
             let rect = Rect::from_min_max(
@@ -84,25 +148,16 @@ impl EguiContext {
                 egui::epaint::Primitive::Callback(callback) => todo!(),
             }
             self.draw_batches
-                .push((rect, shape_batch.bake_buffers(wnd)));
+                .push((rect, shape_batch.bake_buffers(gpu)));
         }
+    }
 
-        let mut pass_builder = wnd.create_render_builder();
-        let mut pass = pass_builder.build_render_pass(RenderOptions {
-            clear_color: Color::CLEAR,
-        });
-
-        if self.brush.needs_update() {
-            self.brush.update(wnd);
+    fn free_textures(&mut self, textures: Vec<TextureId>) {
+        for id in textures {
+            if let Some(texture) = self.textures.remove(&id) {
+                drop(texture);
+            }
         }
-
-        for (scissor, buffer) in &self.draw_batches {
-            pass.set_scissor(scissor);
-            pass.render_shapes_cached(&self.brush, buffer);
-        }
-
-        pass.finish();
-        pass_builder.finish_render(wnd);
     }
 }
 

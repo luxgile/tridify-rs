@@ -1,6 +1,6 @@
 use glam::Mat4;
 
-use crate::{GpuBuffer, ToGpuBuf, Transform, WindowCtx};
+use crate::{GpuBuffer, GpuCtx, ToGpuBuf, Transform};
 
 /// Projection representation using field of view and aspect ratio.
 pub struct Projection {
@@ -50,7 +50,7 @@ impl Camera {
 }
 
 impl ToGpuBuf for Camera {
-    fn build_buffer(&self, wnd: &WindowCtx) -> crate::GpuBuffer {
+    fn build_buffer(&self, wnd: &GpuCtx) -> crate::GpuBuffer {
         GpuBuffer::init(
             wnd,
             bytemuck::cast_slice(&self.build_camera_matrix().to_cols_array()),
