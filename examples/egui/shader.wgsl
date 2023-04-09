@@ -10,12 +10,30 @@ struct VertexOutput {
     @location(1) uv: vec2<f32>,
 };
 
+struct Locals {
+    screen_size: vec2<f32>,
+    // Uniform buffers need to be at least 16 bytes in WebGL.
+    // See https://github.com/gfx-rs/wgpu/issues/2072
+    _padding: vec2<u32>,
+}
+
+@group(0) @binding(0) var<uniform> locals: Locals;
+
+fn position_from_screen(screen_pos: vec2<f32>) -> vec4<f32> {
+    return vec4<f32>(
+        2.0 * screen_pos.x / locals.screen_size.x - 1.0,
+        1.0 - 2.0 * screen_pos.y / locals.screen_size.y,
+        0.0,
+        1.0,
+    );
+}
+
 @vertex
 fn vs_main(
     model: VertexInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-    out.clip_position = vec4<f32>(model.position, 1.0);
+    out.clip_position = position_from_screen(model.position.xy);
     out.color = model.color;
     out.uv = model.uv;
     return out;

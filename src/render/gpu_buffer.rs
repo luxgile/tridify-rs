@@ -71,6 +71,8 @@ impl ToBinder for GpuBuffer {
             resource: self.buffer.as_entire_binding(),
         }
     }
+
+    fn debug_name(&self) -> &'static str { "GPU Buffer" }
 }
 
 impl Clone for GpuBuffer {

@@ -37,4 +37,6 @@ impl ToBinder for Sampler {
             resource: wgpu::BindingResource::Sampler(&self.inner_sampler),
         }
     }
+
+    fn debug_name(&self) -> &'static str { "Sampler" }
 }

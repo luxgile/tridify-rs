@@ -85,14 +85,14 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn from_path(wnd: &GpuCtx, path: &Path) -> Self {
+    pub fn from_path(gpu: &GpuCtx, path: &Path) -> Self {
         let image = image::open(path).expect("Error loading image.");
         let desc = TextureDesc {
             size: TextureSize::D2(UVec2::new(image.width(), image.height())),
             usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
         };
-        let texture = Self::new(wnd, desc, None);
-        texture.write_pixels(wnd, &image.to_rgba8());
+        let texture = Self::new(gpu, desc, None);
+        texture.write_pixels(gpu, &image.to_rgba8());
         texture
     }
 
@@ -170,4 +170,6 @@ impl ToBinder for Texture {
             resource: wgpu::BindingResource::TextureView(&self.view),
         }
     }
+
+    fn debug_name(&self) -> &'static str { "Texture" }
 }

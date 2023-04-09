@@ -1,5 +1,6 @@
-use std::error::Error;
+use std::{error::Error, path::Path};
 
+use bytemuck::bytes_of;
 use egui::{
     epaint::{
         ahash::{HashMap, HashMapExt, HashSet},
@@ -9,7 +10,7 @@ use egui::{
     FullOutput, RawInput, TextureId, TexturesDelta,
 };
 
-use glam::{UVec2, Vec2};
+use glam::{UVec2, Vec2, Vec4};
 use tridify_rs::*;
 
 pub struct EguiContext {
@@ -31,20 +32,20 @@ impl EguiContext {
         let mut brush =
             Brush::from_source(brush_desc, gpu, include_str!("shader.wgsl").to_string())
                 .expect("Error compiling egui brush");
-        brush.bind(
-            1,
-            0,
-            Texture::init(
-                gpu,
-                TextureDesc {
-                    size: TextureSize::D2(UVec2::new(1, 1)),
-                    usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
-                },
-                bytemuck::bytes_of(&Color::WHITE),
-                None,
-            ),
+        let binder = Sampler::new_default(gpu);
+        let texture = Texture::from_path(
+            gpu,
+            Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\draw_cube\texture.png"#),
         );
-        brush.bind(1, 1, Sampler::new_default(gpu));
+
+        let screen_size = gpu.get_wnd_size().as_vec2().extend(0.).extend(0.);
+        brush.bind(
+            0,
+            0,
+            GpuBuffer::init(gpu, bytes_of(&screen_size.to_array())),
+        );
+        brush.bind(1, 0, texture);
+        brush.bind(1, 1, binder);
 
         Self {
             brush,

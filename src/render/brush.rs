@@ -15,9 +15,9 @@ pub enum AlphaBlend {
     SoftAdditive,
     Multiplied,
 }
-impl Into<wgpu::BlendComponent> for AlphaBlend {
-    fn into(self) -> wgpu::BlendComponent {
-        match self {
+impl From<AlphaBlend> for wgpu::BlendComponent {
+    fn from(val: AlphaBlend) -> Self {
+        match val {
             AlphaBlend::Default => wgpu::BlendComponent {
                 src_factor: wgpu::BlendFactor::SrcAlpha,
                 dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
@@ -126,12 +126,13 @@ impl Brush {
     pub fn needs_update(&self) -> bool { self.needs_update }
 
     /// Update GPU bindings and pipelines with current brush data.
-    pub fn update(&mut self, wnd: &GpuCtx) {
-        let device = &wnd.device;
+    pub fn update(&mut self, gpu: &GpuCtx) {
+        let device = &gpu.device;
         self.cached_bindings.clear();
         let mut bgls: Vec<(u32, wgpu::BindGroupLayout)> = Vec::new();
         for (i, binder) in self.assets_to_bind.iter() {
-            let (bgl, bg) = binder.bake(wnd);
+            //Bake group
+            let (bgl, bg) = binder.bake(gpu);
             bgls.push((*i, bgl));
             self.cached_bindings.push((*i, bg));
         }
@@ -154,7 +155,7 @@ impl Brush {
                 entry_point: "fs_main",
                 targets: &[Some(ColorTargetState {
                     write_mask: wgpu::ColorWrites::ALL,
-                    format: wnd.surface.get_supported_formats(&wnd.adapter)[0].into(),
+                    format: gpu.surface.get_supported_formats(&gpu.adapter)[0],
                     blend: Some(self.desc.blend),
                 })],
             }),
