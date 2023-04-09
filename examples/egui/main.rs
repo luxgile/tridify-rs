@@ -21,7 +21,7 @@ pub struct EguiContext {
 }
 
 impl EguiContext {
-    pub fn new(wnd: &GpuCtx) -> Self {
+    pub fn new(gpu: &GpuCtx) -> Self {
         let brush_desc = BrushDesc {
             blend: wgpu::BlendState {
                 alpha: AlphaBlend::Premultiplied.into(),
@@ -29,8 +29,22 @@ impl EguiContext {
             },
         };
         let mut brush =
-            Brush::from_source(brush_desc, wnd, include_str!("shader.wgsl").to_string())
+            Brush::from_source(brush_desc, gpu, include_str!("shader.wgsl").to_string())
                 .expect("Error compiling egui brush");
+        brush.bind(
+            1,
+            0,
+            Texture::init(
+                gpu,
+                TextureDesc {
+                    size: TextureSize::D2(UVec2::new(1, 1)),
+                    usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
+                },
+                bytemuck::bytes_of(&Color::WHITE),
+                None,
+            ),
+        );
+        brush.bind(1, 1, Sampler::new_default(gpu));
 
         Self {
             brush,
@@ -46,16 +60,11 @@ impl EguiContext {
     pub fn start(&mut self, wnd: &GpuCtx) {
         let wnd_size = wnd.get_wnd_size();
         self.input.screen_rect = Some(egui::Rect {
-            min: egui::pos2(0., 0.),
+            min: egui::Pos2::ZERO,
             max: egui::pos2(wnd_size.x as f32, wnd_size.y as f32),
         });
         self.ctx.begin_frame(self.input.take());
         self.draw_batches.clear();
-
-        //TODO: Bind textures somehow??
-        // if self.texture.is_none() {
-        //     self.texture = Some()
-        // }
     }
 
     pub fn render(&mut self, gpu: &GpuCtx) {

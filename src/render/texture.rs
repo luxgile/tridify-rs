@@ -96,6 +96,12 @@ impl Texture {
         texture
     }
 
+    pub fn init(gpu: &GpuCtx, desc: TextureDesc, data: &[u8], label: Option<&str>) -> Self {
+        let texture = Self::new(gpu, desc, label);
+        texture.write_pixels(gpu, data);
+        texture
+    }
+
     pub fn new(gpu: &GpuCtx, desc: TextureDesc, label: Option<&str>) -> Self {
         let size = desc.size.get_size();
         let texture = gpu.device.create_texture(&TextureDescriptor {

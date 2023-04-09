@@ -20,8 +20,12 @@ fn vs_main(
     out.uv = model.uv;
     return out;
 }
+@group(1) @binding(0) var r_tex_color: texture_2d<f32>;
+@group(1) @binding(1) var r_tex_sampler: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return in.color;
+    let tex_linear = textureSample(r_tex_color, r_tex_sampler, in.uv);
+    let out_color_linear = in.color * tex_linear;
+    return out_color_linear;
 }

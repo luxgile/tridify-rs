@@ -129,13 +129,13 @@ impl Brush {
     pub fn update(&mut self, wnd: &GpuCtx) {
         let device = &wnd.device;
         self.cached_bindings.clear();
-        let mut bgls = Vec::new();
+        let mut bgls: Vec<(u32, wgpu::BindGroupLayout)> = Vec::new();
         for (i, binder) in self.assets_to_bind.iter() {
             let (bgl, bg) = binder.bake(wnd);
-            bgls.push((i, bgl));
+            bgls.push((*i, bgl));
             self.cached_bindings.push((*i, bg));
         }
-        bgls.sort_by(|a, b| a.0.partial_cmp(b.0).unwrap());
+        bgls.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
         let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &bgls.iter().map(|x| &x.1).collect::<Vec<_>>(),

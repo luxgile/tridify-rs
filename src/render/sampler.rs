@@ -7,9 +7,9 @@ pub struct Sampler {
     inner_sampler: wgpu::Sampler,
 }
 impl Sampler {
-    pub fn new_default(wnd: &GpuCtx) -> Self {
+    pub fn new_default(gpu: &GpuCtx) -> Self {
         Self {
-            inner_sampler: wnd.device.create_sampler(&wgpu::SamplerDescriptor {
+            inner_sampler: gpu.device.create_sampler(&wgpu::SamplerDescriptor {
                 address_mode_u: wgpu::AddressMode::ClampToEdge,
                 address_mode_v: wgpu::AddressMode::ClampToEdge,
                 address_mode_w: wgpu::AddressMode::ClampToEdge,
