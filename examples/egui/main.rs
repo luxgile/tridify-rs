@@ -19,6 +19,7 @@ pub struct EguiContext {
     brush: Brush,
     draw_batches: Vec<(Rect, ShapeBuffer)>,
     textures: HashMap<TextureId, Texture>,
+    screen_size_buffer: GpuBuffer,
 }
 
 impl EguiContext {
@@ -39,16 +40,14 @@ impl EguiContext {
         );
 
         let screen_size = gpu.get_wnd_size().as_vec2().extend(0.).extend(0.);
-        brush.bind(
-            0,
-            0,
-            GpuBuffer::init(gpu, bytes_of(&screen_size.to_array())),
-        );
+        let screen_size_buffer = GpuBuffer::init(gpu, bytes_of(&screen_size.to_array()));
+        brush.bind(0, 0, screen_size_buffer.clone());
         brush.bind(1, 0, texture);
         brush.bind(1, 1, binder);
 
         Self {
             brush,
+            screen_size_buffer,
             draw_batches: Vec::new(),
             textures: HashMap::new(),
             ctx: egui::Context::default(),
@@ -58,8 +57,12 @@ impl EguiContext {
 
     pub fn ctx(&self) -> &egui::Context { &self.ctx }
 
-    pub fn start(&mut self, wnd: &GpuCtx) {
-        let wnd_size = wnd.get_wnd_size();
+    pub fn start(&mut self, gpu: &GpuCtx) {
+        let wnd_size = gpu.get_wnd_size();
+        self.screen_size_buffer.write(
+            gpu,
+            bytes_of(&wnd_size.as_vec2().extend(0.).extend(0.).to_array()),
+        );
         self.input.screen_rect = Some(egui::Rect {
             min: egui::Pos2::ZERO,
             max: egui::pos2(wnd_size.x as f32, wnd_size.y as f32),
