@@ -37,15 +37,24 @@ impl Color {
     pub const BLUE: Color = Color::new(0.0, 0.0, 1.0, 1.0);
     pub const BLUE_TEAL: Color = Color::new(0.0, 0.5, 0.5, 1.0);
     pub const BLUE_AQUA: Color = Color::new(0.0, 1.0, 1.0, 1.0);
+
+    pub fn to_rgba8(&self) -> [u8; 4] {
+        [
+            (self.r * 255.0) as u8,
+            (self.g * 255.0) as u8,
+            (self.b * 255.0) as u8,
+            (self.a * 255.0) as u8,
+        ]
+    }
 }
 
-impl Into<wgpu::Color> for Color {
-    fn into(self) -> wgpu::Color {
+impl From<Color> for wgpu::Color {
+    fn from(val: Color) -> Self {
         wgpu::Color {
-            r: self.r as f64,
-            g: self.g as f64,
-            b: self.b as f64,
-            a: self.a as f64,
+            r: val.r as f64,
+            g: val.g as f64,
+            b: val.b as f64,
+            a: val.a as f64,
         }
     }
 }

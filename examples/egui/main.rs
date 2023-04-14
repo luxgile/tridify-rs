@@ -34,10 +34,12 @@ impl EguiContext {
             Brush::from_source(brush_desc, gpu, include_str!("shader.wgsl").to_string())
                 .expect("Error compiling egui brush");
         let binder = Sampler::new_default(gpu);
-        let texture = Texture::from_path(
-            gpu,
-            Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\draw_cube\texture.png"#),
-        );
+        //Create texture with only one white pixel
+        let texture_desc = TextureDesc {
+            usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
+            size: TextureSize::D2(UVec2::new(1, 1)),
+        };
+        let texture = Texture::init(gpu, texture_desc, bytes_of(&Color::WHITE.to_rgba8()), None);
 
         let screen_size = gpu.get_wnd_size().as_vec2().extend(0.).extend(0.);
         let screen_size_buffer = GpuBuffer::init(gpu, bytes_of(&screen_size.to_array()));
