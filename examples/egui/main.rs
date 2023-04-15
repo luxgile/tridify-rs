@@ -99,8 +99,14 @@ impl EguiContext {
 
     fn set_textures(&mut self, gpu: &GpuCtx, set_textures: Vec<(TextureId, ImageDelta)>) {
         for (id, image_delta) in set_textures {
+            let origin = match image_delta.pos {
+                Some(pos) => UVec2::new(pos[0] as u32, pos[1] as u32),
+                None => UVec2::ZERO,
+            }
+            .extend(0);
             let image_size = image_delta.image.size();
             let texture = self.textures.entry(id).or_insert_with(|| {
+                println!("Creating texture: {:?}", id);
                 Texture::new(
                     gpu,
                     TextureDesc {
@@ -110,25 +116,20 @@ impl EguiContext {
                         )),
                         usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
                     },
-                    Some(format!("egui texture [{:?}]", id).as_str()),
+                    Some(format!("EGui texture [{:?}]", id).as_str()),
                 )
             });
             match image_delta.image {
                 egui::ImageData::Color(image) => {
                     let data: Vec<Color> = image.pixels.iter().map(|x| Color::from(*x)).collect();
-                    Self::update_texture(gpu, texture, bytemuck::cast_slice(&data));
+                    texture.write_region_pixels(gpu, bytemuck::cast_slice(&data), origin);
                 }
                 egui::ImageData::Font(image) => {
                     let data: Vec<Color> = image.srgba_pixels(None).map(Color::from).collect();
-                    Self::update_texture(gpu, texture, bytemuck::cast_slice(&data));
+                    texture.write_region_pixels(gpu, bytemuck::cast_slice(&data), origin);
                 }
-            }
+            };
         }
-    }
-
-    //TODO: Have in mind delta position to not update all texture
-    fn update_texture(gpu: &GpuCtx, texture: &Texture, data: &[u8]) {
-        texture.write_pixels(gpu, data);
     }
 
     fn handle_shapes(&mut self, gpu: &GpuCtx, shapes: Vec<ClippedShape>) {
@@ -169,9 +170,7 @@ impl EguiContext {
 
     fn free_textures(&mut self, textures: Vec<TextureId>) {
         for id in textures {
-            if let Some(texture) = self.textures.remove(&id) {
-                drop(texture);
-            }
+            self.textures.remove(&id);
         }
     }
 }
@@ -181,27 +180,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let wnd = app.create_window()?;
     let mut egui = EguiContext::new(wnd.ctx());
 
-    let mut name = "Arthur";
-    let mut age = 42;
+    let mut egui_demo = egui_demo_lib::DemoWindows::default();
 
     wnd.set_render_loop(move |wnd, _| {
         //Start egui frame.
         egui.start(wnd);
 
-        //Render UI using egui as usual.
-        egui::CentralPanel::default().show(egui.ctx(), |ui| {
-            ui.heading("My egui Application");
-            ui.horizontal(|ui| {
-                let name_label = ui.label("Your name: ");
-                ui.text_edit_singleline(&mut name)
-                    .labelled_by(name_label.id);
-            });
-            ui.add(egui::Slider::new(&mut age, 0..=120).text("age"));
-            if ui.button("Click each year").clicked() {
-                age += 1;
-            }
-            ui.label(format!("Hello '{}', age {}", name, age));
-        });
+        egui_demo.ui(&egui.ctx);
 
         //Finish rendering UI and draw into the screen.
         egui.render(wnd);

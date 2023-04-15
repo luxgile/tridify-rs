@@ -1,5 +1,6 @@
 use std::{num::NonZeroU32, path::Path, rc::Rc};
 
+use egui::Vec2;
 use glam::{UVec2, UVec3};
 use wgpu::{
     ImageCopyTexture, ImageDataLayout, ShaderStages, TextureAspect, TextureDescriptor,
@@ -125,7 +126,7 @@ impl Texture {
         }
     }
 
-    ///Writes data into the texture lazily, which means it won't be done until all GPU commands are sent.
+    ///Queues a write into the texture
     pub fn write_pixels(&self, gpu: &GpuCtx, data: &[u8]) {
         let size = self.desc.size.get_size();
         gpu.queue.write_texture(
@@ -133,6 +134,34 @@ impl Texture {
                 texture: &self.texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
+                aspect: TextureAspect::All,
+            },
+            data,
+            ImageDataLayout {
+                offset: 0,
+                bytes_per_row: NonZeroU32::new(size.x * 4),
+                rows_per_image: NonZeroU32::new(size.y),
+            },
+            wgpu::Extent3d {
+                width: size.x,
+                height: size.y,
+                depth_or_array_layers: size.z,
+            },
+        );
+    }
+
+    ///Queues a write into the texture updating only a subset of it
+    pub fn write_region_pixels(&self, gpu: &GpuCtx, data: &[u8], origin: UVec3) {
+        let size = self.desc.size.get_size();
+        gpu.queue.write_texture(
+            ImageCopyTexture {
+                texture: &self.texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d {
+                    x: origin.x,
+                    y: origin.y,
+                    z: origin.z,
+                },
                 aspect: TextureAspect::All,
             },
             data,
