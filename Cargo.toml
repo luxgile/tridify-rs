@@ -10,6 +10,9 @@ readme = "readme.md"
 keywords = ["graphics", "render", "wgpu", "GPU", "framework"]
 categories = ["multimedia", "rendering", "rendering::engine"]
 
+[features]
+egui = []
+
 [lib] #To compile to DLL in windows and load them in web
 crate-type = ["cdylib", "rlib"]
 

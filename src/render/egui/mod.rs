@@ -12,7 +12,6 @@ use self::egui_backend::*;
 
 pub struct EguiContext {
     pub(crate) platform: Platform,
-    pub(crate) egui_rp: RenderPass,
 }
 
 impl EguiContext {
@@ -25,22 +24,35 @@ impl EguiContext {
             font_definitions: FontDefinitions::default(),
             style: Default::default(),
         });
+
+        Self { platform }
+    }
+
+    pub fn event(&mut self, event: &Event<()>) { self.platform.handle_event(event); }
+
+    pub fn start(&mut self, dt: f64) {
+        self.platform.begin_frame();
+        self.platform.update_time(dt);
+    }
+
+    pub fn ctx(&self) -> egui::Context { self.platform.context() }
+}
+
+pub struct EguiPass {
+    pub(crate) egui_rp: RenderPass,
+}
+impl EguiPass {
+    pub fn new(gpu: &GpuCtx) -> Self {
         let egui_rp = RenderPass::new(
             &gpu.device,
             gpu.surface.get_capabilities(&gpu.adapter).formats[0],
             1,
         );
-
-        Self { platform, egui_rp }
+        Self { egui_rp }
     }
 
-    pub fn event(&mut self, event: &Event<()>) { self.platform.handle_event(event); }
-
-    pub fn start(&mut self) { self.platform.begin_frame(); }
-
-    pub fn render(&mut self, gpu: &GpuCtx, dt: f64) {
-        self.platform.update_time(dt);
-
+    pub fn render(&mut self, gpu: &mut GpuCtx) {
+        let mut egui = gpu.egui.as_mut().unwrap();
         let output_frame = match gpu.surface.get_current_texture() {
             Ok(frame) => frame,
             Err(wgpu::SurfaceError::Outdated) => {
@@ -57,8 +69,8 @@ impl EguiContext {
         let output_view = output_frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let full_output = self.platform.end_frame(Some(&gpu.winit_wnd));
-        let paint_jobs = self.platform.context().tessellate(full_output.shapes);
+        let full_output = egui.platform.end_frame(Some(&gpu.winit_wnd));
+        let paint_jobs = egui.platform.context().tessellate(full_output.shapes);
 
         let mut encoder = gpu
             .device
@@ -98,6 +110,4 @@ impl EguiContext {
             .remove_textures(tdelta)
             .expect("Error removing textures");
     }
-
-    pub fn ctx(&self) -> egui::Context { self.platform.context() }
 }

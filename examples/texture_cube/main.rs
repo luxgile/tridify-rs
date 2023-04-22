@@ -28,10 +28,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut brush = Brush::from_source(
         BrushDesc::default(),
         gpu_ctx,
-        include_str!("3d_shader.wgsl").to_string(),
+        include_str!("shader.wgsl").to_string(),
     )?;
-    // Bind camera, sampler and texture to the brush. Make sure group_index and loc_index are the same as
-    // in the shader.
+    //Bind camera, sampler and texture to the brush. Make sure group_index and loc_index are the same as
+    //in the shader.
     brush.bind(0, 0, camera_buf.clone());
     brush.bind(1, 0, texture);
     brush.bind(1, 1, sampler);

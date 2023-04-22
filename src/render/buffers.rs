@@ -82,6 +82,7 @@ impl ShapeBatch {
         self
     }
 
+    ///Add a square using a Rect as input
     pub fn add_rect(&mut self, rect: &Rect, color: Color) -> &mut ShapeBatch {
         self.add_2d_square(rect.center().extend(0.), rect.size.x, rect.size.y, color);
         self

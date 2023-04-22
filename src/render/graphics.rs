@@ -118,6 +118,8 @@ impl Tridify {
                 queue,
                 surface_config,
                 surface,
+
+                #[cfg(feature = "egui")]
                 egui: None,
             },
         };
@@ -137,9 +139,10 @@ impl Tridify {
                 window_id,
             } => {
                 //Update egui if initilaized
-                let wnd = self.get_window_mut(&window_id).unwrap();
-                if let Some(egui) = wnd.ctx.egui.as_mut() {
-                    egui.event(&event);
+                if let Ok(wnd) = self.get_window_mut(&window_id) {
+                    if let Some(egui) = wnd.ctx.egui.as_mut() {
+                        egui.event(&event);
+                    }
                 }
 
                 match wnd_event {

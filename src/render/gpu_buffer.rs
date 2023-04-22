@@ -15,7 +15,7 @@ pub struct GpuBuffer {
 
 impl GpuBuffer {
     /// Creates a new buffer with uninitialized data.
-    pub fn new(wnd: &GpuCtx) -> Self {
+    fn new(wnd: &GpuCtx) -> Self {
         let buffer = wnd.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: todo!(),

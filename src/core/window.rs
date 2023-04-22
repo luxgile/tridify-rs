@@ -8,7 +8,7 @@ use glam::UVec2;
 
 use winit::dpi::LogicalSize;
 
-use crate::{EguiContext, FrameContext, RenderOptions, RenderPass, RenderPassBuilder};
+use crate::{EguiContext, EguiPass, FrameContext, RenderOptions, RenderPass, RenderPassBuilder};
 
 /// Desktop window representation. Stores it's own GPU context and render loop.
 pub struct Window {
@@ -30,8 +30,10 @@ impl Window {
 
     pub fn ctx(&self) -> &GpuCtx { &self.ctx }
     pub fn view_mut(&mut self) -> &mut GpuCtx { &mut self.ctx }
+
+    #[cfg(feature = "egui")]
     pub fn init_egui(&mut self) {
-        if self.ctx.egui.is_none() {
+        if self.ctx.egui.is_some() {
             eprintln!("Egui has already been initialized.");
             return;
         }
@@ -53,6 +55,7 @@ pub struct GpuCtx {
     pub(crate) device: wgpu::Device,
     pub(crate) queue: wgpu::Queue,
 
+    #[cfg(feature = "egui")]
     pub(crate) egui: Option<EguiContext>,
 }
 
@@ -89,23 +92,19 @@ impl GpuCtx {
     /// Time the window has been running since its creation.
     pub fn time_running(&self) -> Duration { self.created_time.elapsed() }
 
+    #[cfg(feature = "egui")]
     pub fn egui_ctx(&mut self) -> Context {
         self.egui
             .as_ref()
             .expect("Egui context not initialized.")
             .ctx()
     }
-    pub fn egui_start(&mut self) {
+
+    #[cfg(feature = "egui")]
+    pub fn egui_start(&mut self, dt: f64) {
         self.egui
             .as_mut()
             .expect("Egui context not initialized.")
-            .start();
-    }
-    //TODO: Divide EguiContext between platform and render. Store platform in window and render in user main.
-    pub fn egui_render(&mut self) {
-        self.egui
-            .as_mut()
-            .expect("Egui context not initialized.")
-            .render(self, 0.);
+            .start(dt);
     }
 }
