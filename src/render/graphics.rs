@@ -16,7 +16,7 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{GpuCtx, RenderOptions, RenderPass, Texture, Window};
+use crate::{EguiContext, GpuCtx, RenderOptions, RenderPass, Texture, Window};
 
 /// Represents basic information for a given windows rendering frame.
 pub struct FrameContext<'a> {
@@ -24,6 +24,7 @@ pub struct FrameContext<'a> {
     // pub user_ctx: &'a T,
     pub delta_time: f64,
     pub elapsed_time: f64,
+    pub winit_event: &'a Event<'a, ()>,
     eloop: &'a EventLoopWindowTarget<()>,
 }
 
@@ -117,6 +118,7 @@ impl Tridify {
                 queue,
                 surface_config,
                 surface,
+                egui: None,
             },
         };
 
@@ -131,22 +133,30 @@ impl Tridify {
         let event_loop = self.wb.take().unwrap();
         event_loop.run(move |event, eloop, flow| match event {
             Event::WindowEvent {
-                ref event,
+                event: ref wnd_event,
                 window_id,
-            } => match event {
-                WindowEvent::CloseRequested => {
-                    self.destroy_window(&window_id);
-                    if !self.has_windows() {
-                        *flow = ControlFlow::Exit;
+            } => {
+                //Update egui if initilaized
+                let wnd = self.get_window_mut(&window_id).unwrap();
+                if let Some(egui) = wnd.ctx.egui.as_mut() {
+                    egui.event(&event);
+                }
+
+                match wnd_event {
+                    WindowEvent::CloseRequested => {
+                        self.destroy_window(&window_id);
+                        if !self.has_windows() {
+                            *flow = ControlFlow::Exit;
+                        }
                     }
+                    WindowEvent::Resized(size) => {
+                        let wnd = self.get_window_mut(&window_id).unwrap();
+                        wnd.ctx
+                            .set_wnd_gpu_size(UVec2::new(size.width, size.height))
+                    }
+                    _ => {}
                 }
-                WindowEvent::Resized(size) => {
-                    let wnd = self.get_window_mut(&window_id).unwrap();
-                    wnd.ctx
-                        .set_wnd_gpu_size(UVec2::new(size.width, size.height))
-                }
-                _ => {}
-            },
+            }
             Event::MainEventsCleared => {
                 for (id, wnd) in self.windows.iter_mut() {
                     //TODO: User configurable
@@ -161,6 +171,7 @@ impl Tridify {
                 let frame_ctx = FrameContext {
                     delta_time: wnd.ctx().last_draw_time.elapsed().as_secs_f64(),
                     elapsed_time: wnd.ctx().time_running().as_secs_f64(),
+                    winit_event: &event,
                     // user_ctx: &user_ctx,
                     eloop,
                 };

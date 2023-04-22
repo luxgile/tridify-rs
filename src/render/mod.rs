@@ -1,6 +1,7 @@
 mod binders;
 mod brush;
 mod buffers;
+mod egui;
 mod gpu_buffer;
 mod graphics;
 mod render_pass;
@@ -8,6 +9,7 @@ mod sampler;
 mod texture;
 mod vertex;
 
+pub use self::egui::*;
 pub use binders::*;
 pub use brush::*;
 pub use buffers::*;
