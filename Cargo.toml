@@ -1,6 +1,6 @@
 [package]
 name = "tridify-rs"
-description = "Fast render OpenGL API that aims to simplify rendering pipelines. Currently under heavy development."
+description = "Fast wgpu render framework that aims to simplify rendering pipelines. Currently under heavy development."
 version = "0.2.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"

@@ -5,7 +5,7 @@ Work in progress project aiming to provide a really simple but flexible and ligh
 Currently is under heavy development and is not recommened to be used until some basic features are implemented. Latest cargo releases will aim to be as stable as possible, however there will probably be breaking changes between versions (At least until 1.0 is released). 
 
 ### Getting Started
-Write ```cargo add tridify-rs``` in your terminal or add ```tridify-rs = "0.2.0"``` to your cargo.toml. 
+Write ```cargo add tridify-rs``` in your terminal or add ```tridify-rs = "0.2.1"``` to your cargo.toml. 
 Also, see examples below to learn the basics.
 
 ### Examples
@@ -16,12 +16,12 @@ Tridify-rs aims to be low level and flexible to let the user create their own 3D
 However I plan on adding more high-level functionality to trade some flexibility for readability and simplification. Here's a list of the planned features.
 
  - [x] 2D and 3D basic rendering
- - [ ] IMGUI support
+ - [x] EGUI integration
+ - [ ] Lights and Shadows
+ - [ ] GPU instancing
  - [ ] Deferred rendering
-    - [ ] Lights and Shadows
-    - [ ] GPU instancing
  - [ ] Scene framework
  - [ ] Particle and VFXs
  
- Tridify-rs is not meant to be a game engine and won't support other features not related with rendering like input handling, physics, audio or asset management.
+ Tridify-rs is not meant to be a game engine and it won't support other features that are not related with rendering like advanced input handling, physics, audio or asset management.
 
