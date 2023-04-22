@@ -10,10 +10,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let gpu_ctx = window.ctx();
 
     //Load texture from path.
-    let texture = Texture::from_path(
-        gpu_ctx,
-        Path::new(r#"D:\Development\Rust Crates\LDrawy\examples\draw_cube\texture.png"#),
-    );
+    let texture = Texture::from_path(gpu_ctx, Path::new(r#"examples/texture_cube/texture.png"#));
 
     //Sampler defines how the texture will be rendered in shapes.
     let sampler = Sampler::new_default(gpu_ctx);

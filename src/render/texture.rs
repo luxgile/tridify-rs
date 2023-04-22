@@ -87,7 +87,8 @@ pub struct Texture {
 
 impl Texture {
     pub fn from_path(gpu: &GpuCtx, path: &Path) -> Self {
-        let image = image::open(path).expect("Error loading image.");
+        let image =
+            image::open(path).unwrap_or_else(|_| panic!("Error loading image at {:?}", path));
         let desc = TextureDesc {
             size: TextureSize::D2(UVec2::new(image.width(), image.height())),
             usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
