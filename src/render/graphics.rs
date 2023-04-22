@@ -1,5 +1,4 @@
 use std::{
-    cell::RefCell,
     collections::HashMap,
     error::Error,
     time::{Duration, Instant},
@@ -16,7 +15,7 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{EguiContext, GpuCtx, RenderOptions, RenderPass, Texture, Window};
+use crate::{GpuCtx, RenderOptions, RenderPass, Texture, Window};
 
 /// Represents basic information for a given windows rendering frame.
 pub struct FrameContext<'a> {
@@ -139,6 +138,7 @@ impl Tridify {
                 window_id,
             } => {
                 //Update egui if initilaized
+                #[cfg(feature = "egui")]
                 if let Ok(wnd) = self.get_window_mut(&window_id) {
                     if let Some(egui) = wnd.ctx.egui.as_mut() {
                         egui.event(&event);

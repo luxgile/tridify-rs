@@ -8,7 +8,10 @@ use glam::UVec2;
 
 use winit::dpi::LogicalSize;
 
-use crate::{EguiContext, EguiPass, FrameContext, RenderOptions, RenderPass, RenderPassBuilder};
+use crate::{FrameContext, RenderOptions, RenderPass, RenderPassBuilder};
+
+#[cfg(feature = "egui")]
+use crate::EguiContext;
 
 /// Desktop window representation. Stores it's own GPU context and render loop.
 pub struct Window {
