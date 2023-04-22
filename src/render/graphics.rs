@@ -7,8 +7,8 @@ use std::{
 
 use glam::UVec2;
 use wgpu::{
-    Adapter, Backends, Device, DeviceDescriptor, Features, Limits, Queue, RequestAdapterOptions,
-    Surface, SurfaceConfiguration, TextureUsages,
+    Adapter, Backends, Device, DeviceDescriptor, Features, InstanceDescriptor, Limits, Queue,
+    RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -35,17 +35,17 @@ pub struct Tridify {
 }
 impl Tridify {
     pub fn new() -> Self {
-        cfg_if::cfg_if! {
-            if #[cfg(target_arch = "wasm32")] {
-                std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-                console_log::init_with_level(log::Level::Warn).expect("Couldn't initialize logger");
-            } else {
-                env_logger::init();
-            }
-        }
+        // cfg_if::cfg_if! {
+        //     if #[cfg(target_arch = "wasm32")] {
+        //         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+        //         console_log::init_with_level(log::Level::Warn).expect("Couldn't initialize logger");
+        //     } else {
+        //         env_logger::init();
+        //     }
+        // }
 
         Self {
-            wgpu: wgpu::Instance::new(Backends::all()),
+            wgpu: wgpu::Instance::new(InstanceDescriptor::default()),
             wb: Some(EventLoop::new()),
             windows: HashMap::new(),
         }
@@ -58,7 +58,11 @@ impl Tridify {
     pub fn create_window(&mut self) -> Result<&mut Window, Box<dyn Error>> {
         let wnd = winit::window::Window::new(self.wb.as_ref().unwrap())?;
         let wnd_id = wnd.id();
-        let surface = unsafe { self.wgpu.create_surface(&wnd) };
+        let surface = unsafe {
+            self.wgpu
+                .create_surface(&wnd)
+                .expect("Error creating window surface")
+        };
         let adapter = pollster::block_on(self.wgpu.request_adapter(&RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
             force_fallback_adapter: false,
@@ -75,8 +79,9 @@ impl Tridify {
             None,
         ))?;
         let surface_config = SurfaceConfiguration {
+            view_formats: vec![surface.get_capabilities(&adapter).formats[0]],
             usage: TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_supported_formats(&adapter)[0],
+            format: surface.get_capabilities(&adapter).formats[0],
             width: wnd.inner_size().width,
             height: wnd.inner_size().height,
             present_mode: wgpu::PresentMode::Fifo,
@@ -84,22 +89,22 @@ impl Tridify {
         };
         surface.configure(&device, &surface_config);
 
-        #[cfg(target_arch = "wasm32")]
-        {
-            use winit::dpi::PhysicalSize;
-            wnd.set_inner_size(PhysicalSize::new(450, 400));
+        // #[cfg(target_arch = "wasm32")]
+        // {
+        //     use winit::dpi::PhysicalSize;
+        //     wnd.set_inner_size(PhysicalSize::new(450, 400));
 
-            use winit::platform::web::WindowExtWebSys;
-            web_sys::window()
-                .and_then(|win| win.document())
-                .and_then(|doc| {
-                    let dst = doc.get_element_by_id("wasm-example")?;
-                    let canvas = web_sys::Element::from(wnd.canvas());
-                    dst.append_child(&canvas).ok()?;
-                    Some(())
-                })
-                .expect("Couldn't append canvas to document body.");
-        }
+        //     use winit::platform::web::WindowExtWebSys;
+        //     web_sys::window()
+        //         .and_then(|win| win.document())
+        //         .and_then(|doc| {
+        //             let dst = doc.get_element_by_id("wasm-example")?;
+        //             let canvas = web_sys::Element::from(wnd.canvas());
+        //             dst.append_child(&canvas).ok()?;
+        //             Some(())
+        //         })
+        //         .expect("Couldn't append canvas to document body.");
+        // }
 
         let window = Window {
             user_loop: None,

@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/luxgile/tridify.rs"
 readme = "readme.md"
 
-keywords = ["graphics", "render", "OpenGL", "GPU", "API"]
+keywords = ["graphics", "render", "wgpu", "GPU", "framework"]
 categories = ["multimedia", "rendering", "rendering::engine"]
 
 [lib] #To compile to DLL in windows and load them in web
@@ -20,9 +20,9 @@ wasm-bindgen = "0.2.83"
 glam = "0.22.0"
 image = "0.24.2"
 pollster = "0.2.5"
-bytemuck = { version = "1.12.3", features = ["derive"]}
+bytemuck = { version = "1.12.3", features = ["derive"] }
 winit = "0.27.5"
-wgpu = "0.14.2"
+wgpu = { version = "0.16.0", features = ["webgl"] }
 env_logger = "0.10.0"
 bitflags = "1.3.2"
 uuid = { version = "1.3.0", features = ["v4", "macro-diagnostics"] }
@@ -30,14 +30,10 @@ egui = { version = "0.21.0", default-features = true }
 egui_demo_lib = "0.21.0"
 
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-console_error_panic_hook = "0.1.7"
-console_log = "0.2.0"
-wgpu = { version = "0.14.2", features = ["webgl"]}
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4.33"
-web-sys = { version = "0.3", features = [
-    "Document",
-    "Window",
-    "Element",
-]}
+# [target.'cfg(target_arch = "wasm32")'.dependencies]
+# console_error_panic_hook = "0.1.7"
+# console_log = "0.2.0"
+# wgpu = { version = "0.14.2", features = ["webgl"] }
+# wasm-bindgen = "0.2"
+# wasm-bindgen-futures = "0.4.33"
+# web-sys = { version = "0.3", features = ["Document", "Window", "Element"] }

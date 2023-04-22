@@ -117,6 +117,7 @@ impl Texture {
             dimension: desc.size.get_wgpu_dimension(),
             format: TextureFormat::Rgba8UnormSrgb,
             usage: desc.get_wgpu_usage(),
+            view_formats: &[TextureFormat::Rgba8UnormSrgb],
         });
         let view = texture.create_view(&TextureViewDescriptor::default());
         Self {
@@ -139,8 +140,8 @@ impl Texture {
             data,
             ImageDataLayout {
                 offset: 0,
-                bytes_per_row: NonZeroU32::new(size.x * 4),
-                rows_per_image: NonZeroU32::new(size.y),
+                bytes_per_row: Some(size.x * 4),
+                rows_per_image: Some(size.y),
             },
             wgpu::Extent3d {
                 width: size.x,
@@ -167,8 +168,8 @@ impl Texture {
             data,
             ImageDataLayout {
                 offset: 0,
-                bytes_per_row: NonZeroU32::new(size.x * 4),
-                rows_per_image: NonZeroU32::new(size.y),
+                bytes_per_row: Some(size.x * 4),
+                rows_per_image: Some(size.y),
             },
             wgpu::Extent3d {
                 width: size.x,

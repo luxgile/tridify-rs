@@ -155,7 +155,7 @@ impl Brush {
                 entry_point: "fs_main",
                 targets: &[Some(ColorTargetState {
                     write_mask: wgpu::ColorWrites::ALL,
-                    format: gpu.surface.get_supported_formats(&gpu.adapter)[0],
+                    format: gpu.surface.get_capabilities(&gpu.adapter).formats[0],
                     blend: Some(self.desc.blend),
                 })],
             }),
