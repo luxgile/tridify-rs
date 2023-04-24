@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use glam::Mat4;
 use wgpu::{
     CommandEncoder, CommandEncoderDescriptor, Operations, RenderPassColorAttachment,
     RenderPassDescriptor, SurfaceTexture, TextureView, TextureViewDescriptor,
@@ -86,9 +87,9 @@ impl<'a> RenderPass<'a> {
     }
 
     ///Draw batch on the canvas.
-    pub fn render_shapes(&mut self, wnd: &GpuCtx, brush: &'a mut Brush, buffer: &'a ShapeBuffer) {
+    pub fn render_shapes(&mut self, gpu: &GpuCtx, brush: &'a mut Brush, buffer: &'a ShapeBuffer) {
         if brush.needs_update() {
-            brush.update(wnd);
+            brush.update(gpu);
         }
         self.render_shapes_cached(brush, buffer);
     }
@@ -108,6 +109,25 @@ impl<'a> RenderPass<'a> {
             .set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         self.pass.draw_indexed(0..buffer.index_len, 0, 0..1);
     }
+
+    pub fn render_shapes_instanced_cached(
+        &mut self, brush: &'a Brush, buffer: &'a ShapeBuffer, matrices: &'a [Mat4],
+    ) {
+        let pipeline = brush.get_pipeline();
+        self.pass.set_pipeline(pipeline);
+        let bind_groups = brush.get_bind_groups();
+        bind_groups
+            .iter()
+            .for_each(|(id, bg)| self.pass.set_bind_group(*id, bg, &[]));
+
+        asdasdsa
+        self.pass
+            .set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
+        self.pass
+            .set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+        self.pass.draw_indexed(0..buffer.index_len, 0, 0..1);
+    }
+
     pub fn finish(self) {
     }
 }
