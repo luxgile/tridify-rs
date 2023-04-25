@@ -15,9 +15,8 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{GpuCtx, RenderOptions, RenderPass, Texture, Window};
+use crate::{GpuCtx, OutputSurface, RenderOptions, RenderPass, Texture, WgpuBuilder, Window};
 
-/// Represents basic information for a given windows rendering frame.
 pub struct FrameContext<'a> {
     //event loop
     // pub user_ctx: &'a T,
@@ -58,36 +57,7 @@ impl Tridify {
     pub fn create_window(&mut self) -> Result<&mut Window, Box<dyn Error>> {
         let wnd = winit::window::Window::new(self.wb.as_ref().unwrap())?;
         let wnd_id = wnd.id();
-        let surface = unsafe {
-            self.wgpu
-                .create_surface(&wnd)
-                .expect("Error creating window surface")
-        };
-        let adapter = pollster::block_on(self.wgpu.request_adapter(&RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::default(),
-            force_fallback_adapter: false,
-            compatible_surface: Some(&surface),
-        }))
-        .ok_or("Error requesting adapter.")?;
-
-        let (device, queue) = pollster::block_on(adapter.request_device(
-            &DeviceDescriptor {
-                label: None,
-                features: Features::empty(),
-                limits: Limits::downlevel_webgl2_defaults(),
-            },
-            None,
-        ))?;
-        let surface_config = SurfaceConfiguration {
-            view_formats: vec![surface.get_capabilities(&adapter).formats[0]],
-            usage: TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_capabilities(&adapter).formats[0],
-            width: wnd.inner_size().width,
-            height: wnd.inner_size().height,
-            present_mode: wgpu::PresentMode::Fifo,
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
-        };
-        surface.configure(&device, &surface_config);
+        
 
         // #[cfg(target_arch = "wasm32")]
         // {
@@ -106,26 +76,33 @@ impl Tridify {
         //         .expect("Couldn't append canvas to document body.");
         // }
 
+        let ctx = GpuCtx::from_wnd(&self.wgpu, wnd);
+
         let window = Window {
             user_loop: None,
-            ctx: GpuCtx {
-                created_time: Instant::now(),
-                last_draw_time: Instant::now(),
-                winit_wnd: wnd,
-                adapter,
-                device,
-                queue,
-                surface_config,
-                surface,
-
-                #[cfg(feature = "egui")]
-                egui: None,
-            },
+            ctx,
         };
 
         self.windows.insert(wnd_id, window);
         let window = self.windows.get_mut(&wnd_id).unwrap();
         Ok(window)
+    }
+
+    pub fn create_headless_context(&self) -> GpuCtx {
+        let (adapter, device, queue) = WgpuBuilder::build_context(&self.wgpu, None)
+            .expect("Error creating WGPU context for window.");
+
+        let output = OutputSurface::Headless(Texture::new(gpu, desc, label))
+
+        GpuCtx {
+            created_time: Instant::now(),
+            last_draw_time: Instant::now(),
+            output,
+            adapter,
+            device,
+            queue,
+            egui: None,
+        }
     }
 
     /// Begin application logic loop. Should be called last when initializing since this function
@@ -140,7 +117,7 @@ impl Tridify {
                 //Update egui if initilaized
                 #[cfg(feature = "egui")]
                 if let Ok(wnd) = self.get_window_mut(&window_id) {
-                    if let Some(egui) = wnd.ctx.egui.as_mut() {
+                    if let Some(egui) = wnd.ctx.8.as_mut() {
                         egui.event(&event);
                     }
                 }

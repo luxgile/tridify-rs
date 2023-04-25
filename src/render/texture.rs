@@ -3,7 +3,7 @@ use std::{num::NonZeroU32, path::Path, rc::Rc};
 use egui::Vec2;
 use glam::{UVec2, UVec3};
 use wgpu::{
-    ImageCopyTexture, ImageDataLayout, ShaderStages, TextureAspect, TextureDescriptor,
+    Device, ImageCopyTexture, ImageDataLayout, ShaderStages, TextureAspect, TextureDescriptor,
     TextureFormat, TextureUsages, TextureViewDescriptor,
 };
 
@@ -105,8 +105,12 @@ impl Texture {
     }
 
     pub fn new(gpu: &GpuCtx, desc: TextureDesc, label: Option<&str>) -> Self {
+        Self::new_internal(&gpu.device, desc, label)
+    }
+
+    pub(crate) fn new_internal(device: &Device, desc: TextureDesc, label: Option<&str>) -> Self {
         let size = desc.size.get_size();
-        let texture = gpu.device.create_texture(&TextureDescriptor {
+        let texture = device.create_texture(&TextureDescriptor {
             label,
             size: wgpu::Extent3d {
                 width: size.x,

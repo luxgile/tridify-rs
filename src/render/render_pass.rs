@@ -110,24 +110,6 @@ impl<'a> RenderPass<'a> {
         self.pass.draw_indexed(0..buffer.index_len, 0, 0..1);
     }
 
-    pub fn render_shapes_instanced_cached(
-        &mut self, brush: &'a Brush, buffer: &'a ShapeBuffer, matrices: &'a [Mat4],
-    ) {
-        let pipeline = brush.get_pipeline();
-        self.pass.set_pipeline(pipeline);
-        let bind_groups = brush.get_bind_groups();
-        bind_groups
-            .iter()
-            .for_each(|(id, bg)| self.pass.set_bind_group(*id, bg, &[]));
-
-        asdasdsa
-        self.pass
-            .set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
-        self.pass
-            .set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-        self.pass.draw_indexed(0..buffer.index_len, 0, 0..1);
-    }
-
     pub fn finish(self) {
     }
 }

@@ -16,7 +16,7 @@ pub struct EguiContext {
 
 impl EguiContext {
     pub fn new(gpu: &GpuCtx) -> Self {
-        let size = gpu.get_wnd_size();
+        let size = gpu.get_output_size();
         let platform = Platform::new(PlatformDescriptor {
             physical_width: size.x,
             physical_height: size.y,
@@ -78,7 +78,7 @@ impl EguiPass {
                 label: Some("encoder"),
             });
 
-        let size = gpu.get_wnd_size();
+        let size = gpu.get_output_size();
         // Upload all resources for the GPU.
         let screen_descriptor = ScreenDescriptor {
             physical_width: size.x,
