@@ -27,26 +27,26 @@ impl Default for RenderOptions {
 }
 
 pub struct RenderPassBuilder {
-    draw_cmds: CommandEncoder,
+    gpu_commands: CommandEncoder,
     frame_view: TextureView,
     frame_texture: Option<SurfaceTexture>,
 }
 impl RenderPassBuilder {
     pub fn from_gpu(gpu: &GpuCtx) -> Result<Self, Box<dyn Error>> {
         let (frame_texture, frame_view) = gpu.get_output_frame();
-        let draw_cmds = gpu
+        let gpu_commands = gpu
             .device
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
 
         Ok(Self {
-            draw_cmds,
+            gpu_commands,
             frame_view,
             frame_texture,
         })
     }
 
     pub fn build_render_pass(&mut self, options: RenderOptions) -> RenderPass {
-        let pass = self.draw_cmds.begin_render_pass(&RenderPassDescriptor {
+        let pass = self.gpu_commands.begin_render_pass(&RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(RenderPassColorAttachment {
                 view: &self.frame_view,
@@ -62,7 +62,7 @@ impl RenderPassBuilder {
     }
 
     pub fn finish_render(self, wnd: &GpuCtx) {
-        wnd.queue.submit(Some(self.draw_cmds.finish()));
+        wnd.queue.submit(Some(self.gpu_commands.finish()));
         if let Some(frame_texture) = self.frame_texture {
             frame_texture.present();
         }

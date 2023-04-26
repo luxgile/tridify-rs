@@ -15,7 +15,9 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{GpuCtx, OutputSurface, RenderOptions, RenderPass, Texture, WgpuBuilder, Window};
+use crate::{
+    GpuCtx, OutputSurface, RenderOptions, RenderPass, Texture, TextureDesc, WgpuBuilder, Window,
+};
 
 pub struct FrameContext<'a> {
     //event loop
@@ -85,6 +87,10 @@ impl Tridify {
         self.windows.insert(wnd_id, window);
         let window = self.windows.get_mut(&wnd_id).unwrap();
         Ok(window)
+    }
+
+    pub fn create_headless(&self, desc: TextureDesc) -> GpuCtx {
+        GpuCtx::from_texture(&self.wgpu, desc)
     }
 
     /// Begin application logic loop. Should be called last when initializing since this function
