@@ -53,7 +53,7 @@ impl EguiPass {
 
     pub fn render(&mut self, gpu: &mut GpuCtx) {
         let (output_frame, output_view) = gpu.get_output_frame();
-        let mut egui = gpu.egui.as_mut().unwrap();
+        let egui = gpu.egui.as_mut().unwrap();
         let winit_wnd = match &gpu.output {
             crate::OutputSurface::Window(wnd) => &wnd.winit_wnd,
             crate::OutputSurface::Headless(_) => panic!("Egui not supported for headless mode."),

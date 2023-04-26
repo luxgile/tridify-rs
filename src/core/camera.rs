@@ -44,8 +44,7 @@ impl Camera {
     pub fn new(view: Transform, proj: Projection) -> Self { Self { view, proj } }
 
     pub fn build_camera_matrix(&self) -> Mat4 {
-        let mat = self.proj.build_matrix() * self.view.build_matrix();
-        mat
+        self.proj.build_matrix() * self.view.build_matrix()
     }
 }
 

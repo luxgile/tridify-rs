@@ -2,8 +2,7 @@ use std::time::{Duration, Instant};
 
 use glam::UVec2;
 use wgpu::{
-    PresentMode, Surface, SurfaceCapabilities, SurfaceConfiguration, TextureUsages,
-    TextureViewDescriptor,
+    PresentMode, SurfaceCapabilities, SurfaceConfiguration, TextureUsages, TextureViewDescriptor,
 };
 use winit::dpi::LogicalSize;
 
@@ -118,7 +117,7 @@ impl GpuCtx {
                 wnd.surface.configure(&self.device, &wnd.surface_config);
                 self.redraw();
             }
-            OutputSurface::Headless(tex) => {
+            OutputSurface::Headless(_) => {
                 panic!("Cannot change size for headless output.");
             }
         };
@@ -161,7 +160,7 @@ impl GpuCtx {
     pub fn get_capabilities(&self) -> SurfaceCapabilities {
         match &self.output {
             OutputSurface::Window(wnd) => wnd.surface.get_capabilities(&self.adapter),
-            OutputSurface::Headless(tex) => SurfaceCapabilities {
+            OutputSurface::Headless(_) => SurfaceCapabilities {
                 present_modes: vec![PresentMode::AutoVsync],
                 formats: vec![wgpu::TextureFormat::Bgra8Unorm],
                 alpha_modes: vec![wgpu::CompositeAlphaMode::Auto],

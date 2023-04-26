@@ -5,19 +5,14 @@ use std::{
 };
 
 use glam::UVec2;
-use wgpu::{
-    Adapter, Backends, Device, DeviceDescriptor, Features, InstanceDescriptor, Limits, Queue,
-    RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages,
-};
+use wgpu::InstanceDescriptor;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget},
     window::WindowId,
 };
 
-use crate::{
-    GpuCtx, OutputSurface, RenderOptions, RenderPass, Texture, TextureDesc, WgpuBuilder, Window,
-};
+use crate::{GpuCtx, TextureDesc, Window};
 
 pub struct FrameContext<'a> {
     //event loop
@@ -25,7 +20,7 @@ pub struct FrameContext<'a> {
     pub delta_time: f64,
     pub elapsed_time: f64,
     pub winit_event: &'a Event<'a, ()>,
-    eloop: &'a EventLoopWindowTarget<()>,
+    pub eloop: &'a EventLoopWindowTarget<()>,
 }
 
 /// Root struct which initializes WGPU, starts window management and handles application loop.
@@ -95,7 +90,7 @@ impl Tridify {
 
     /// Begin application logic loop. Should be called last when initializing since this function
     /// can't never return.
-    pub fn start<T: 'static>(mut self, user_ctx: T) -> ! {
+    pub fn start<T: 'static>(mut self, _user_ctx: T) -> ! {
         let event_loop = self.wb.take().unwrap();
         event_loop.run(move |event, eloop, flow| match event {
             Event::WindowEvent {
@@ -126,7 +121,7 @@ impl Tridify {
                 }
             }
             Event::MainEventsCleared => {
-                for (id, wnd) in self.windows.iter_mut() {
+                for (_, wnd) in self.windows.iter_mut() {
                     //TODO: User configurable
                     if wnd.ctx().last_draw_time.elapsed() >= Duration::from_millis(16.6 as u64) {
                         wnd.view_mut().redraw();
@@ -156,4 +151,8 @@ impl Tridify {
     pub fn get_window_mut(&mut self, id: &WindowId) -> Result<&mut Window, &str> {
         self.windows.get_mut(id).ok_or("No window found.")
     }
+}
+
+impl Default for Tridify {
+    fn default() -> Self { Self::new() }
 }

@@ -3,10 +3,12 @@ use crate::{FrameContext, GpuCtx};
 #[cfg(feature = "egui")]
 use crate::EguiContext;
 
+type UserLoop = dyn FnMut(&mut GpuCtx, &FrameContext);
+
 /// Desktop window representation. Stores it's own GPU context and render loop.
 pub struct Window {
     pub(crate) ctx: GpuCtx,
-    pub(crate) user_loop: Option<Box<dyn FnMut(&mut GpuCtx, &FrameContext)>>,
+    pub(crate) user_loop: Option<Box<UserLoop>>,
 }
 impl Window {
     /// Step through render loop once.

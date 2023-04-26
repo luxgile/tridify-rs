@@ -1,9 +1,8 @@
 use std::error::Error;
 
-use glam::Mat4;
 use wgpu::{
     CommandEncoder, CommandEncoderDescriptor, Operations, RenderPassColorAttachment,
-    RenderPassDescriptor, SurfaceTexture, TextureView, TextureViewDescriptor,
+    RenderPassDescriptor, SurfaceTexture, TextureView,
 };
 
 use crate::core::Color;

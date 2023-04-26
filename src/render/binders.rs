@@ -69,3 +69,7 @@ impl Binder {
         (bgl, bg)
     }
 }
+
+impl Default for Binder {
+    fn default() -> Self { Self::new() }
+}

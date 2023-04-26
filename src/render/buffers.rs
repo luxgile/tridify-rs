@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use glam::{Quat, Vec3};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
