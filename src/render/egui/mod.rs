@@ -17,10 +17,14 @@ pub struct EguiContext {
 impl EguiContext {
     pub fn new(gpu: &GpuCtx) -> Self {
         let size = gpu.get_output_size();
+        let scale_factor = match &gpu.output {
+            crate::OutputSurface::Window(wnd) => wnd.winit_wnd.scale_factor(),
+            crate::OutputSurface::Headless(_) => panic!("Egui not supported for headless mode."),
+        };
         let platform = Platform::new(PlatformDescriptor {
             physical_width: size.x,
             physical_height: size.y,
-            scale_factor: gpu.winit_wnd.scale_factor(),
+            scale_factor,
             font_definitions: FontDefinitions::default(),
             style: Default::default(),
         });
@@ -43,33 +47,18 @@ pub struct EguiPass {
 }
 impl EguiPass {
     pub fn new(gpu: &GpuCtx) -> Self {
-        let egui_rp = RenderPass::new(
-            &gpu.device,
-            gpu.surface.get_capabilities(&gpu.adapter).formats[0],
-            1,
-        );
+        let egui_rp = RenderPass::new(&gpu.device, gpu.get_capabilities().formats[0], 1);
         Self { egui_rp }
     }
 
     pub fn render(&mut self, gpu: &mut GpuCtx) {
+        let (output_frame, output_view) = gpu.get_output_frame();
         let mut egui = gpu.egui.as_mut().unwrap();
-        let output_frame = match gpu.surface.get_current_texture() {
-            Ok(frame) => frame,
-            Err(wgpu::SurfaceError::Outdated) => {
-                // This error occurs when the app is minimized on Windows.
-                // Silently return here to prevent spamming the console with:
-                // "The underlying surface has changed, and therefore the swap chain must be updated"
-                return;
-            }
-            Err(e) => {
-                eprintln!("Dropped frame with error: {}", e);
-                return;
-            }
+        let winit_wnd = match &gpu.output {
+            crate::OutputSurface::Window(wnd) => &wnd.winit_wnd,
+            crate::OutputSurface::Headless(_) => panic!("Egui not supported for headless mode."),
         };
-        let output_view = output_frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let full_output = egui.platform.end_frame(Some(&gpu.winit_wnd));
+        let full_output = egui.platform.end_frame(Some(winit_wnd));
         let paint_jobs = egui.platform.context().tessellate(full_output.shapes);
 
         let mut encoder = gpu
@@ -83,7 +72,7 @@ impl EguiPass {
         let screen_descriptor = ScreenDescriptor {
             physical_width: size.x,
             physical_height: size.y,
-            scale_factor: gpu.winit_wnd.scale_factor() as f32,
+            scale_factor: winit_wnd.scale_factor() as f32,
         };
         let tdelta: egui::TexturesDelta = full_output.textures_delta;
         self.egui_rp
@@ -104,7 +93,9 @@ impl EguiPass {
             .unwrap();
         // Submit the commands.
         gpu.queue.submit(iter::once(encoder.finish()));
-        output_frame.present();
+        if let Some(output_frame) = output_frame {
+            output_frame.present();
+        }
 
         self.egui_rp
             .remove_textures(tdelta)

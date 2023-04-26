@@ -1,12 +1,4 @@
-use std::{
-    error::Error,
-    time::{Duration, Instant},
-};
-
-use egui::Context;
-use glam::UVec2;
-
-use crate::{FrameContext, GpuCtx, RenderOptions, RenderPass, RenderPassBuilder};
+use crate::{FrameContext, GpuCtx};
 
 #[cfg(feature = "egui")]
 use crate::EguiContext;

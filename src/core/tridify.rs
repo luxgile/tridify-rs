@@ -57,7 +57,6 @@ impl Tridify {
     pub fn create_window(&mut self) -> Result<&mut Window, Box<dyn Error>> {
         let wnd = winit::window::Window::new(self.wb.as_ref().unwrap())?;
         let wnd_id = wnd.id();
-        
 
         // #[cfg(target_arch = "wasm32")]
         // {
@@ -88,23 +87,6 @@ impl Tridify {
         Ok(window)
     }
 
-    pub fn create_headless_context(&self) -> GpuCtx {
-        let (adapter, device, queue) = WgpuBuilder::build_context(&self.wgpu, None)
-            .expect("Error creating WGPU context for window.");
-
-        let output = OutputSurface::Headless(Texture::new(gpu, desc, label))
-
-        GpuCtx {
-            created_time: Instant::now(),
-            last_draw_time: Instant::now(),
-            output,
-            adapter,
-            device,
-            queue,
-            egui: None,
-        }
-    }
-
     /// Begin application logic loop. Should be called last when initializing since this function
     /// can't never return.
     pub fn start<T: 'static>(mut self, user_ctx: T) -> ! {
@@ -117,7 +99,7 @@ impl Tridify {
                 //Update egui if initilaized
                 #[cfg(feature = "egui")]
                 if let Ok(wnd) = self.get_window_mut(&window_id) {
-                    if let Some(egui) = wnd.ctx.8.as_mut() {
+                    if let Some(egui) = wnd.ctx.egui.as_mut() {
                         egui.event(&event);
                     }
                 }
@@ -132,7 +114,7 @@ impl Tridify {
                     WindowEvent::Resized(size) => {
                         let wnd = self.get_window_mut(&window_id).unwrap();
                         wnd.ctx
-                            .set_wnd_gpu_size(UVec2::new(size.width, size.height))
+                            .set_output_surface_size(UVec2::new(size.width, size.height))
                     }
                     _ => {}
                 }

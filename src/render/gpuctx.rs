@@ -1,10 +1,17 @@
 use std::time::{Duration, Instant};
 
 use glam::UVec2;
-use wgpu::{Surface, SurfaceConfiguration, TextureUsages};
+use wgpu::{
+    PresentMode, Surface, SurfaceCapabilities, SurfaceConfiguration, TextureUsages,
+    TextureViewDescriptor,
+};
 use winit::dpi::LogicalSize;
 
-use crate::{EguiContext, RenderPassBuilder, Texture, TextureDesc, WgpuBuilder};
+use crate::{RenderPassBuilder, Texture, TextureDesc, WgpuBuilder};
+
+#[cfg(feature = "egui")]
+use crate::EguiContext;
+#[cfg(feature = "egui")]
 use egui::Context;
 
 pub struct WindowSurface {
@@ -38,7 +45,7 @@ impl GpuCtx {
             wgpu.create_surface(&wnd)
                 .expect("Error creating window surface")
         };
-        let (adapter, device, queue) = WgpuBuilder::build_context(&wgpu, Some(&surface))
+        let (adapter, device, queue) = WgpuBuilder::build_context(wgpu, Some(&surface))
             .expect("Error creating WGPU context for window.");
 
         let surface_config = SurfaceConfiguration {
@@ -66,12 +73,13 @@ impl GpuCtx {
             adapter,
             device,
             queue,
+            #[cfg(feature = "egui")]
             egui: None,
         }
     }
 
     pub fn from_texture(wgpu: &wgpu::Instance, desc: TextureDesc) -> Self {
-        let (adapter, device, queue) = WgpuBuilder::build_context(&wgpu, None)
+        let (adapter, device, queue) = WgpuBuilder::build_context(wgpu, None)
             .expect("Error creating WGPU context for window.");
 
         let texture = Texture::new_internal(&device, desc, None);
@@ -84,15 +92,27 @@ impl GpuCtx {
             adapter,
             device,
             queue,
+            #[cfg(feature = "egui")]
             egui: None,
         }
     }
 
     pub fn set_output_size(&mut self, size: UVec2) {
-        match self.output {
-            OutputSurface::Window(mut wnd) => {
+        match &mut self.output {
+            OutputSurface::Window(wnd) => {
                 wnd.winit_wnd
                     .set_inner_size(LogicalSize::new(size.x, size.y));
+                self.set_output_surface_size(size);
+                self.redraw();
+            }
+            OutputSurface::Headless(_) => {
+                panic!("Cannot change size for headless output.");
+            }
+        }
+    }
+    pub(crate) fn set_output_surface_size(&mut self, size: UVec2) {
+        match &mut self.output {
+            OutputSurface::Window(wnd) => {
                 wnd.surface_config.width = size.x.max(1);
                 wnd.surface_config.height = size.y.max(1);
                 wnd.surface.configure(&self.device, &wnd.surface_config);
@@ -101,28 +121,57 @@ impl GpuCtx {
             OutputSurface::Headless(tex) => {
                 panic!("Cannot change size for headless output.");
             }
-        }
+        };
     }
 
     pub fn get_output_size(&self) -> UVec2 {
-        match self.output {
+        match &self.output {
             OutputSurface::Window(wnd) => {
                 let size = wnd.winit_wnd.inner_size();
                 UVec2::new(size.width, size.height)
-            },
-            OutputSurface::Headless(text) => {
-                text.desc.size.get_size().truncate()
-            },
+            }
+            OutputSurface::Headless(tex) => tex.desc.size.get_size().truncate(),
         }
-        
     }
 
-    /// Force the window to render again.
-    pub fn redraw(&self) { self.winit_wnd.request_redraw(); }
+    pub fn get_output_frame(&self) -> (Option<wgpu::SurfaceTexture>, wgpu::TextureView) {
+        match &self.output {
+            crate::OutputSurface::Window(wnd) => {
+                let frame_texture = wnd
+                    .surface
+                    .get_current_texture()
+                    .expect("Error getting frame.");
+                let frame_view = frame_texture
+                    .texture
+                    .create_view(&TextureViewDescriptor::default());
+                (Some(frame_texture), frame_view)
+            }
+            crate::OutputSurface::Headless(tex) => (None, tex.create_wgpu_view()),
+        }
+    }
+
+    /// Force the window to render again. Does nothing if headless.
+    pub fn redraw(&self) {
+        match &self.output {
+            OutputSurface::Window(wnd) => wnd.winit_wnd.request_redraw(),
+            OutputSurface::Headless(_) => {}
+        }
+    }
+
+    pub fn get_capabilities(&self) -> SurfaceCapabilities {
+        match &self.output {
+            OutputSurface::Window(wnd) => wnd.surface.get_capabilities(&self.adapter),
+            OutputSurface::Headless(tex) => SurfaceCapabilities {
+                present_modes: vec![PresentMode::AutoVsync],
+                formats: vec![wgpu::TextureFormat::Bgra8Unorm],
+                alpha_modes: vec![wgpu::CompositeAlphaMode::Auto],
+            },
+        }
+    }
 
     /// Create a new frame that will be drawn to.
     pub fn create_render_builder(&self) -> RenderPassBuilder {
-        RenderPassBuilder::new(self).expect(
+        RenderPassBuilder::from_gpu(self).expect(
             "Issue creating render pass builder. Make sure rendering cycle is being done properly.",
         )
     }

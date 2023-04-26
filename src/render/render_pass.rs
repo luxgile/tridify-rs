@@ -29,15 +29,12 @@ impl Default for RenderOptions {
 pub struct RenderPassBuilder {
     draw_cmds: CommandEncoder,
     frame_view: TextureView,
-    frame_texture: SurfaceTexture,
+    frame_texture: Option<SurfaceTexture>,
 }
 impl RenderPassBuilder {
-    pub fn new(wnd: &GpuCtx) -> Result<Self, Box<dyn Error>> {
-        let frame_texture = wnd.surface.get_current_texture()?;
-        let frame_view = frame_texture
-            .texture
-            .create_view(&TextureViewDescriptor::default());
-        let mut draw_cmds = wnd
+    pub fn from_gpu(gpu: &GpuCtx) -> Result<Self, Box<dyn Error>> {
+        let (frame_texture, frame_view) = gpu.get_output_frame();
+        let draw_cmds = gpu
             .device
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
 
@@ -66,7 +63,9 @@ impl RenderPassBuilder {
 
     pub fn finish_render(self, wnd: &GpuCtx) {
         wnd.queue.submit(Some(self.draw_cmds.finish()));
-        self.frame_texture.present();
+        if let Some(frame_texture) = self.frame_texture {
+            frame_texture.present();
+        }
     }
 }
 

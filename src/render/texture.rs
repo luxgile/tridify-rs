@@ -4,7 +4,7 @@ use egui::Vec2;
 use glam::{UVec2, UVec3};
 use wgpu::{
     Device, ImageCopyTexture, ImageDataLayout, ShaderStages, TextureAspect, TextureDescriptor,
-    TextureFormat, TextureUsages, TextureViewDescriptor,
+    TextureFormat, TextureUsages, TextureView, TextureViewDescriptor,
 };
 
 use crate::{GpuCtx, ToBinder};
@@ -82,7 +82,10 @@ impl TextureDesc {
 pub struct Texture {
     pub desc: TextureDesc,
     texture: Rc<wgpu::Texture>,
-    view: wgpu::TextureView,
+
+    //Only used to link texture with shaders.
+    //TODO: Make sure this is used everywhere to avoid creating multiple views if not needed.
+    cached_view: TextureView,
 }
 
 impl Texture {
@@ -124,12 +127,15 @@ impl Texture {
             usage: desc.get_wgpu_usage(),
             view_formats: &[TextureFormat::Rgba8UnormSrgb],
         });
-        let view = texture.create_view(&TextureViewDescriptor::default());
         Self {
             desc,
+            cached_view: texture.create_view(&TextureViewDescriptor::default()),
             texture: Rc::new(texture),
-            view,
         }
+    }
+
+    pub fn create_wgpu_view(&self) -> wgpu::TextureView {
+        self.texture.create_view(&TextureViewDescriptor::default())
     }
 
     ///Queues a write into the texture
@@ -202,7 +208,7 @@ impl ToBinder for Texture {
     fn get_group(&self, index: u32) -> wgpu::BindGroupEntry {
         wgpu::BindGroupEntry {
             binding: index,
-            resource: wgpu::BindingResource::TextureView(&self.view),
+            resource: wgpu::BindingResource::TextureView(&self.cached_view),
         }
     }
 
