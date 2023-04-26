@@ -99,15 +99,22 @@ impl GpuCtx {
                 self.redraw();
             }
             OutputSurface::Headless(tex) => {
-                //TODO: Add resize to textures
-                tex.resize()
+                panic!("Cannot change size for headless output.");
             }
         }
     }
 
     pub fn get_output_size(&self) -> UVec2 {
-        let size = self.winit_wnd.inner_size();
-        UVec2::new(size.width, size.height)
+        match self.output {
+            OutputSurface::Window(wnd) => {
+                let size = wnd.winit_wnd.inner_size();
+                UVec2::new(size.width, size.height)
+            },
+            OutputSurface::Headless(text) => {
+                text.desc.size.get_size().truncate()
+            },
+        }
+        
     }
 
     /// Force the window to render again.
