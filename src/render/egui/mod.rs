@@ -6,7 +6,7 @@ use egui::FontDefinitions;
 use wgpu::Error;
 use winit::event::Event;
 
-use crate::GpuCtx;
+use crate::{GpuCtx, OutputSurface};
 
 use self::egui_backend::*;
 
@@ -52,7 +52,7 @@ impl EguiPass {
     }
 
     pub fn render(&mut self, gpu: &mut GpuCtx) {
-        let (output_frame, output_view) = gpu.get_output_frame();
+        let output_view = gpu.get_output().get_texture_view();
         let egui = gpu.egui.as_mut().unwrap();
         let winit_wnd = match &gpu.output {
             crate::OutputSurface::Window(wnd) => &wnd.winit_wnd,
@@ -93,8 +93,8 @@ impl EguiPass {
             .unwrap();
         // Submit the commands.
         gpu.queue.submit(iter::once(encoder.finish()));
-        if let Some(output_frame) = output_frame {
-            output_frame.present();
+        if let OutputSurface::Window(wnd) = gpu.get_output() {
+            wnd.surface.get_current_texture().unwrap().present();
         }
 
         self.egui_rp

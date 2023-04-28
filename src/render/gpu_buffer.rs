@@ -47,6 +47,10 @@ impl GpuBuffer {
     pub fn write(&mut self, wnd: &GpuCtx, data: &[u8]) {
         wnd.queue.write_buffer(&self.buffer, 0, data);
     }
+
+    pub fn get_handle(&self) -> Rc<Buffer> {
+        Rc::clone(&self.buffer)
+    }
 }
 
 impl ToBinder for GpuBuffer {

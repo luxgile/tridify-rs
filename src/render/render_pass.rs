@@ -1,10 +1,14 @@
 use std::error::Error;
 
+use wgpu::{ImageCopyTexture, Origin3d, TextureAspect, ImageCopyBuffer};
 use wgpu::{
     CommandEncoder, CommandEncoderDescriptor, Operations, RenderPassColorAttachment,
     RenderPassDescriptor, SurfaceTexture, TextureView,
 };
 
+use crate::GpuBuffer;
+use crate::OutputSurface;
+use crate::Texture;
 use crate::core::Color;
 use crate::GpuCtx;
 use crate::Rect;
@@ -25,14 +29,13 @@ impl Default for RenderOptions {
     }
 }
 
-pub struct RenderPassBuilder {
+pub struct GpuCommands {
     gpu_commands: CommandEncoder,
     frame_view: TextureView,
-    frame_texture: Option<SurfaceTexture>,
 }
-impl RenderPassBuilder {
+impl GpuCommands {
     pub fn from_gpu(gpu: &GpuCtx) -> Result<Self, Box<dyn Error>> {
-        let (frame_texture, frame_view) = gpu.get_output_frame();
+        let frame_view = gpu.get_output().get_texture_view();
         let gpu_commands = gpu
             .device
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
@@ -40,11 +43,10 @@ impl RenderPassBuilder {
         Ok(Self {
             gpu_commands,
             frame_view,
-            frame_texture,
         })
     }
 
-    pub fn build_render_pass(&mut self, options: RenderOptions) -> RenderPass {
+    pub fn start_render_pass(&mut self, options: RenderOptions) -> RenderPass {
         let pass = self.gpu_commands.begin_render_pass(&RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(RenderPassColorAttachment {
@@ -60,10 +62,16 @@ impl RenderPassBuilder {
         RenderPass { pass }
     }
 
-    pub fn finish_render(self, wnd: &GpuCtx) {
-        wnd.queue.submit(Some(self.gpu_commands.finish()));
-        if let Some(frame_texture) = self.frame_texture {
-            frame_texture.present();
+    pub fn texture_to_buffer(&self, source: &Texture, dest: &GpuBuffer) {
+        let source = ImageCopyTexture { texture: source.get_handle().as_ref(), mip_level: 0, origin: Origin3d::ZERO, aspect: TextureAspect::All };
+        let dest = ImageCopyBuffer { buffer: &dest.get_handle(), layout: todo!()  };
+        self.gpu_commands.copy_texture_to_buffer(source, destination, copy_size);
+    }
+
+    pub fn finish_render(self, gpu: &GpuCtx) {
+        gpu.queue.submit(Some(self.gpu_commands.finish()));
+        if let OutputSurface::Window(wnd) = gpu.get_output() {
+            wnd.surface.get_current_texture().unwrap().present();
         }
     }
 }

@@ -2,11 +2,11 @@ use std::time::{Duration, Instant};
 
 use glam::UVec2;
 use wgpu::{
-    PresentMode, SurfaceCapabilities, SurfaceConfiguration, TextureUsages, TextureViewDescriptor,
+    PresentMode, SurfaceCapabilities, SurfaceConfiguration, TextureUsages, TextureViewDescriptor, Surface,
 };
 use winit::dpi::LogicalSize;
 
-use crate::{RenderPassBuilder, Texture, TextureDesc, WgpuBuilder};
+use crate::{GpuCommands, Texture, TextureDesc, WgpuBuilder};
 
 #[cfg(feature = "egui")]
 use crate::EguiContext;
@@ -22,6 +22,24 @@ pub struct WindowSurface {
 pub enum OutputSurface {
     Window(WindowSurface),
     Headless(Texture),
+}
+
+impl OutputSurface {
+    pub fn get_texture_view(&self) -> wgpu::TextureView {
+        match &self {
+            crate::OutputSurface::Window(wnd) => {
+                let frame_texture = wnd
+                    .surface
+                    .get_current_texture()
+                    .expect("Error getting frame.");
+                let frame_view = frame_texture
+                    .texture
+                    .create_view(&TextureViewDescriptor::default());
+                frame_view
+            }
+            crate::OutputSurface::Headless(tex) => tex.create_wgpu_view(),
+        }
+    }
 }
 
 /// Holds GPU context, devices, surfaces, etc. for a window. Must be used on most GPU related
@@ -133,20 +151,8 @@ impl GpuCtx {
         }
     }
 
-    pub fn get_output_frame(&self) -> (Option<wgpu::SurfaceTexture>, wgpu::TextureView) {
-        match &self.output {
-            crate::OutputSurface::Window(wnd) => {
-                let frame_texture = wnd
-                    .surface
-                    .get_current_texture()
-                    .expect("Error getting frame.");
-                let frame_view = frame_texture
-                    .texture
-                    .create_view(&TextureViewDescriptor::default());
-                (Some(frame_texture), frame_view)
-            }
-            crate::OutputSurface::Headless(tex) => (None, tex.create_wgpu_view()),
-        }
+    pub fn get_output(&self) -> &OutputSurface {
+        &self.output
     }
 
     /// Force the window to render again. Does nothing if headless.
@@ -169,8 +175,8 @@ impl GpuCtx {
     }
 
     /// Create a new frame that will be drawn to.
-    pub fn create_render_builder(&self) -> RenderPassBuilder {
-        RenderPassBuilder::from_gpu(self).expect(
+    pub fn create_gpu_cmds(&self) -> GpuCommands {
+        GpuCommands::from_gpu(self).expect(
             "Issue creating render pass builder. Make sure rendering cycle is being done properly.",
         )
     }

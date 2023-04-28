@@ -26,12 +26,12 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         ])
         .bake_buffers(&gpu_ctx);
 
-    let mut pass_builder = gpu_ctx.create_render_builder();
-    let mut render_pass = pass_builder.build_render_pass(RenderOptions::default());
+    let mut gpu_cmds = gpu_ctx.create_gpu_cmds();
+    let mut render_pass = gpu_cmds.start_render_pass(RenderOptions::default());
     render_pass.render_shapes(&gpu_ctx, &mut brush, &buffer);
-    //TODO: Paste gpu output into buffer
     render_pass.finish();
-    pass_builder.finish_render(&gpu_ctx);
+    //TODO: Paste gpu output into buffer
+    gpu_cmds.finish_render(&gpu_ctx);
 
     Ok(())
 }

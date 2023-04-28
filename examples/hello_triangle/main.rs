@@ -28,10 +28,10 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
     window.set_render_loop(move |gpu, _| {
         //Create a render pass builder which we will use to define multiple render passes (In this case, only one).
-        let mut pass_builder = gpu.create_render_builder();
+        let mut pass_builder = gpu.create_gpu_cmds();
 
         //Build a render pass which will take care of the brush and shapes to draw them and binding it with the GPU.
-        let mut render_pass = pass_builder.build_render_pass(RenderOptions::default());
+        let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
         render_pass.render_shapes(gpu, &mut brush, &buffer);
         render_pass.finish();
 

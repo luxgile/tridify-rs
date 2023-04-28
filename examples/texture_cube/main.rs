@@ -52,8 +52,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
 
         //Render frame as usual.
-        let mut pass_builder = gpu.create_render_builder();
-        let mut render_pass = pass_builder.build_render_pass(RenderOptions::default());
+        let mut pass_builder = gpu.create_gpu_cmds();
+        let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
         render_pass.render_shapes(gpu, &mut brush, &shape_buffer);
         render_pass.finish();
         pass_builder.finish_render(gpu);

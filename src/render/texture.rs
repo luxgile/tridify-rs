@@ -189,6 +189,10 @@ impl Texture {
             },
         );
     }
+
+    pub fn get_handle(&self) -> Rc<wgpu::Texture> {
+        Rc::clone(&self.texture)
+    }
 }
 
 impl ToBinder for Texture {
