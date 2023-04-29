@@ -15,12 +15,12 @@ pub struct GpuBuffer {
 
 impl GpuBuffer {
     /// Creates a new buffer with uninitialized data.
-    fn new(wnd: &GpuCtx) -> Self {
-        let buffer = wnd.device.create_buffer(&wgpu::BufferDescriptor {
+    pub fn new(gpu: &GpuCtx, size: u64, usage: wgpu::BufferUsages) -> Self {
+        let buffer = gpu.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
-            size: todo!(),
-            usage: todo!(),
-            mapped_at_creation: todo!(),
+            size,
+            usage,
+            mapped_at_creation: false,
         });
         Self {
             buffer: Rc::new(buffer),
@@ -28,14 +28,14 @@ impl GpuBuffer {
     }
 
     /// Creates a buffer with the given bytes.
-    pub fn init(wnd: &GpuCtx, data: &[u8]) -> Self {
+    pub fn init(wnd: &GpuCtx, data: &[u8], usage: wgpu::BufferUsages) -> Self {
         let buffer = wnd
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: None,
                 contents: data,
                 //TODO: User config
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                usage,
             });
 
         Self {
@@ -48,8 +48,17 @@ impl GpuBuffer {
         wnd.queue.write_buffer(&self.buffer, 0, data);
     }
 
-    pub fn get_handle(&self) -> Rc<Buffer> {
-        Rc::clone(&self.buffer)
+    pub fn get_handle(&self) -> Rc<Buffer> { Rc::clone(&self.buffer) }
+
+    pub async fn map_buffer(&self, gpu: &GpuCtx) -> wgpu::BufferView {
+        let buffer = self.buffer.as_ref().slice(..);
+        let (tx, rx) = futures_intrusive::channel::shared::oneshot_channel();
+        buffer.map_async(wgpu::MapMode::Read, move |result| {
+            tx.send(result).unwrap();
+        });
+        gpu.device.poll(wgpu::Maintain::Wait);
+        rx.receive().await.unwrap().unwrap();
+        buffer.get_mapped_range()
     }
 }
 

@@ -12,7 +12,7 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{GpuCtx, TextureDesc, Window};
+use crate::{GpuCtx, TextureDesc, TextureSize, Window};
 
 pub struct FrameContext<'a> {
     //event loop
@@ -84,8 +84,8 @@ impl Tridify {
         Ok(window)
     }
 
-    pub fn create_headless(&self, desc: TextureDesc) -> GpuCtx {
-        GpuCtx::from_texture(&self.wgpu, desc)
+    pub fn create_headless(&self, size: TextureSize) -> GpuCtx {
+        GpuCtx::from_texture(&self.wgpu, size)
     }
 
     /// Begin application logic loop. Should be called last when initializing since this function

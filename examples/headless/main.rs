@@ -3,12 +3,17 @@ use std::error::Error;
 use glam::UVec2;
 use tridify_rs::*;
 
+const OUTPUT_WIDTH: u32 = 1920;
+const OUTPUT_HEIGHT: u32 = 1080;
+
 pub fn main() -> Result<(), Box<dyn Error>> {
     let app = Tridify::new();
-    let gpu_ctx = app.create_headless(TextureDesc {
-        size: TextureSize::D2(UVec2::new(1920, 1080)),
-        usage: TextureUsage::RENDER,
-    });
+    let gpu_ctx = app.create_headless(TextureSize::D2(UVec2::new(OUTPUT_WIDTH, OUTPUT_HEIGHT)));
+    let output_buffer = GpuBuffer::new(
+        &gpu_ctx,
+        (OUTPUT_WIDTH * OUTPUT_HEIGHT * Color::size_in_bytes() as u32) as u64,
+        wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+    );
 
     //Create brush to draw the shapes.
     let mut brush = Brush::from_source(
@@ -30,8 +35,16 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let mut render_pass = gpu_cmds.start_render_pass(RenderOptions::default());
     render_pass.render_shapes(&gpu_ctx, &mut brush, &buffer);
     render_pass.finish();
-    //TODO: Paste gpu output into buffer
-    gpu_cmds.finish_render(&gpu_ctx);
+    if let OutputSurface::Headless(texture) = gpu_ctx.get_output() {
+        gpu_cmds.texture_to_buffer(texture, &output_buffer);
+    }
+    gpu_cmds.complete(&gpu_ctx);
 
+    let data = pollster::block_on(output_buffer.map_buffer(&gpu_ctx));
+    let image =
+        image::ImageBuffer::<image::Rgba<u8>, _>::from_raw(OUTPUT_WIDTH, OUTPUT_HEIGHT, data)
+            .unwrap();
+    image.save("examples/headless/output.png").unwrap();
+    //TODO: Output file does not make sense
     Ok(())
 }

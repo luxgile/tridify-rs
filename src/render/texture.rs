@@ -54,6 +54,7 @@ impl TextureSize {
 pub struct TextureDesc {
     pub size: TextureSize,
     pub usage: TextureUsage,
+    pub format: wgpu::TextureFormat,
 }
 impl TextureDesc {
     fn get_wgpu_usage(&self) -> TextureUsages {
@@ -95,6 +96,7 @@ impl Texture {
         let desc = TextureDesc {
             size: TextureSize::D2(UVec2::new(image.width(), image.height())),
             usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
+            format: TextureFormat::Rgba8UnormSrgb,
         };
         let texture = Self::new(gpu, desc, None);
         texture.write_pixels(gpu, &image.to_rgba8());
@@ -123,9 +125,10 @@ impl Texture {
             mip_level_count: 1,
             sample_count: 1,
             dimension: desc.size.get_wgpu_dimension(),
-            format: TextureFormat::Rgba8UnormSrgb,
+            // format: TextureFormat::Rgba8UnormSrgb,
+            format: desc.format,
             usage: desc.get_wgpu_usage(),
-            view_formats: &[TextureFormat::Rgba8UnormSrgb],
+            view_formats: &[desc.format],
         });
         Self {
             desc,
@@ -190,9 +193,7 @@ impl Texture {
         );
     }
 
-    pub fn get_handle(&self) -> Rc<wgpu::Texture> {
-        Rc::clone(&self.texture)
-    }
+    pub fn get_wgpu_handle(&self) -> &wgpu::Texture { &self.texture }
 }
 
 impl ToBinder for Texture {

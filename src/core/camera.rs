@@ -53,6 +53,7 @@ impl ToGpuBuf for Camera {
         GpuBuffer::init(
             wnd,
             bytemuck::cast_slice(&self.build_camera_matrix().to_cols_array()),
+            wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         )
     }
 }

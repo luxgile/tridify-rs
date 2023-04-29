@@ -36,7 +36,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         render_pass.finish();
 
         //Execute all drawing commands from all render passes and render into screen.
-        pass_builder.finish_render(gpu);
+        pass_builder.complete(gpu);
     });
 
     //Start program logic cycle.

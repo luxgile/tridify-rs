@@ -56,7 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
         render_pass.render_shapes(gpu, &mut brush, &shape_buffer);
         render_pass.finish();
-        pass_builder.finish_render(gpu);
+        pass_builder.complete(gpu);
     });
 
     // Start program.

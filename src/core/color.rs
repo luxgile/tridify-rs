@@ -20,6 +20,7 @@ pub struct Color {
 }
 
 impl Color {
+    pub const fn size_in_bytes() -> u32 { std::mem::size_of::<Self>() as u32 }
     pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self { Self { r, g, b, a } }
 
     pub const CLEAR: Color = Color::new(0.0, 0.0, 0.0, 0.0);

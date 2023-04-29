@@ -2,11 +2,12 @@ use std::time::{Duration, Instant};
 
 use glam::UVec2;
 use wgpu::{
-    PresentMode, SurfaceCapabilities, SurfaceConfiguration, TextureUsages, TextureViewDescriptor, Surface,
+    PresentMode, Surface, SurfaceCapabilities, SurfaceConfiguration, TextureUsages,
+    TextureViewDescriptor,
 };
 use winit::dpi::LogicalSize;
 
-use crate::{GpuCommands, Texture, TextureDesc, WgpuBuilder};
+use crate::{GpuCommands, Texture, TextureDesc, TextureSize, TextureUsage, WgpuBuilder};
 
 #[cfg(feature = "egui")]
 use crate::EguiContext;
@@ -32,10 +33,10 @@ impl OutputSurface {
                     .surface
                     .get_current_texture()
                     .expect("Error getting frame.");
-                let frame_view = frame_texture
+
+                frame_texture
                     .texture
-                    .create_view(&TextureViewDescriptor::default());
-                frame_view
+                    .create_view(&TextureViewDescriptor::default())
             }
             crate::OutputSurface::Headless(tex) => tex.create_wgpu_view(),
         }
@@ -55,6 +56,8 @@ pub struct GpuCtx {
     #[cfg(feature = "egui")]
     pub(crate) egui: Option<EguiContext>,
 }
+
+const DEFAULT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
 
 impl GpuCtx {
     pub fn from_wnd(wgpu: &wgpu::Instance, wnd: winit::window::Window) -> Self {
@@ -95,11 +98,15 @@ impl GpuCtx {
         }
     }
 
-    pub fn from_texture(wgpu: &wgpu::Instance, desc: TextureDesc) -> Self {
+    pub fn from_texture(wgpu: &wgpu::Instance, size: TextureSize) -> Self {
         let (adapter, device, queue) = WgpuBuilder::build_context(wgpu, None)
             .expect("Error creating WGPU context for window.");
-
-        let texture = Texture::new_internal(&device, desc, None);
+        let texture_desc = TextureDesc {
+            size,
+            usage: TextureUsage::RENDER | TextureUsage::SOURCE,
+            format: DEFAULT_FORMAT,
+        };
+        let texture = Texture::new_internal(&device, texture_desc, None);
         let output = OutputSurface::Headless(texture);
 
         Self {
@@ -151,9 +158,7 @@ impl GpuCtx {
         }
     }
 
-    pub fn get_output(&self) -> &OutputSurface {
-        &self.output
-    }
+    pub fn get_output(&self) -> &OutputSurface { &self.output }
 
     /// Force the window to render again. Does nothing if headless.
     pub fn redraw(&self) {
@@ -168,7 +173,7 @@ impl GpuCtx {
             OutputSurface::Window(wnd) => wnd.surface.get_capabilities(&self.adapter),
             OutputSurface::Headless(_) => SurfaceCapabilities {
                 present_modes: vec![PresentMode::AutoVsync],
-                formats: vec![wgpu::TextureFormat::Bgra8Unorm],
+                formats: vec![DEFAULT_FORMAT],
                 alpha_modes: vec![wgpu::CompositeAlphaMode::Auto],
             },
         }
