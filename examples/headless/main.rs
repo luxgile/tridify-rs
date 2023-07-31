@@ -11,7 +11,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let gpu_ctx = app.create_headless(TextureSize::D2(UVec2::new(OUTPUT_WIDTH, OUTPUT_HEIGHT)));
     let output_buffer = GpuBuffer::new(
         &gpu_ctx,
-        (OUTPUT_WIDTH * OUTPUT_HEIGHT * Color::size_in_bytes() as u32) as u64,
+        (OUTPUT_WIDTH * OUTPUT_HEIGHT * Color::size_in_bytes()) as u64,
         wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
     );
 
@@ -44,7 +44,8 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let image =
         image::ImageBuffer::<image::Rgba<u8>, _>::from_raw(OUTPUT_WIDTH, OUTPUT_HEIGHT, data)
             .unwrap();
-    image.save("examples/headless/output.png").unwrap();
-    //TODO: Output file does not make sense
+    image.save("output.png").unwrap();
+    //TODO: Output file does not make sense. Need to use RenderDoc API to debug issue.
+    //TODO: Most likely an issue with pic format and data pulled from buffer.
     Ok(())
 }
