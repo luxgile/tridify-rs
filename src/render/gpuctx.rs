@@ -50,7 +50,8 @@ pub struct GpuCtx {
     pub(crate) last_draw_time: Instant,
     pub(crate) output: OutputSurface,
     pub(crate) adapter: wgpu::Adapter,
-    pub(crate) device: wgpu::Device,
+    //TODO: Make private
+    pub device: wgpu::Device,
     pub(crate) queue: wgpu::Queue,
 
     #[cfg(feature = "egui")]

@@ -20,8 +20,17 @@ pub struct Color {
 }
 
 impl Color {
+    ///Should always return 16 bytes.
     pub const fn size_in_bytes() -> u32 { std::mem::size_of::<Self>() as u32 }
     pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self { Self { r, g, b, a } }
+    // pub const fn from_bytes(bytes: [u8; 16]) -> Self {
+    //     Self {
+    //         r: f32::from_be_bytes(<[u8; 4]>::try_from(bytes[0..3])),
+    //         g: f32::from_be_bytes(bytes[4..7].try_into().unwrap()),
+    //         b: f32::from_be_bytes(bytes[8..11].try_into().unwrap()),
+    //         a: f32::from_be_bytes(bytes[12..15].try_into().unwrap()),
+    //     }
+    // }
 
     pub const CLEAR: Color = Color::new(0.0, 0.0, 0.0, 0.0);
     pub const BLACK: Color = Color::new(0.0, 0.0, 0.0, 1.0);

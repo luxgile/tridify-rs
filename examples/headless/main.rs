@@ -6,16 +6,19 @@ use tridify_rs::*;
 const OUTPUT_WIDTH: u32 = 1920;
 const OUTPUT_HEIGHT: u32 = 1080;
 
-pub fn main() -> Result<(), Box<dyn Error>> {
+pub fn main() -> Result<(), Box<dyn Error>> { pollster::block_on(run()) }
+
+async fn run() -> Result<(), Box<dyn Error>> {
     let app = Tridify::new();
     let gpu_ctx = app.create_headless(TextureSize::D2(UVec2::new(OUTPUT_WIDTH, OUTPUT_HEIGHT)));
     let output_buffer = GpuBuffer::new(
         &gpu_ctx,
-        (OUTPUT_WIDTH * OUTPUT_HEIGHT * Color::size_in_bytes()) as u64,
+        (OUTPUT_WIDTH * OUTPUT_HEIGHT * 4) as u64,
         wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
     );
 
     //Create brush to draw the shapes.
+    //TODO: Maybe changing from WSL to SPIRV works?
     let mut brush = Brush::from_source(
         BrushDesc::default(),
         &gpu_ctx,
@@ -40,11 +43,22 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     }
     gpu_cmds.complete(&gpu_ctx);
 
-    let data = pollster::block_on(output_buffer.map_buffer(&gpu_ctx));
-    let image =
-        image::ImageBuffer::<image::Rgba<u8>, _>::from_raw(OUTPUT_WIDTH, OUTPUT_HEIGHT, data)
-            .unwrap();
-    image.save("output.png").unwrap();
+    {
+        let buffer_slice = output_buffer.buffer.as_ref().slice(..);
+        let (tx, rx) = futures_intrusive::channel::shared::oneshot_channel();
+        buffer_slice.map_async(wgpu::MapMode::Read, move |result| {
+            tx.send(result).unwrap();
+        });
+        gpu_ctx.device.poll(wgpu::Maintain::Wait);
+        rx.receive().await.unwrap().unwrap();
+        let data = buffer_slice.get_mapped_range();
+
+        let image =
+            image::ImageBuffer::<image::Rgba<u8>, _>::from_raw(OUTPUT_WIDTH, OUTPUT_HEIGHT, data)
+                .unwrap();
+        image.save("output.png").unwrap();
+    }
+    output_buffer.unmap();
     //TODO: Output file does not make sense. Need to use RenderDoc API to debug issue.
     //TODO: Most likely an issue with pic format and data pulled from buffer.
     Ok(())

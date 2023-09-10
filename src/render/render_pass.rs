@@ -74,7 +74,7 @@ impl GpuCommands {
             buffer: &dest.get_handle(),
             layout: wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: Some(texture_size.x * Color::size_in_bytes()),
+                bytes_per_row: Some(texture_size.x * 4),
                 rows_per_image: Some(texture_size.y),
             },
         };

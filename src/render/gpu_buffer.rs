@@ -10,7 +10,8 @@ pub trait ToGpuBuf {
 
 /// Handle to a GPU buffer.
 pub struct GpuBuffer {
-    buffer: Rc<Buffer>,
+    //TODO: MAke it private
+    pub buffer: Rc<Buffer>,
 }
 
 impl GpuBuffer {
@@ -60,6 +61,8 @@ impl GpuBuffer {
         rx.receive().await.unwrap().unwrap();
         buffer.get_mapped_range()
     }
+
+    pub fn unmap(&self) { self.buffer.unmap(); }
 }
 
 impl ToBinder for GpuBuffer {
