@@ -1,5 +1,6 @@
 mod camera;
 mod color;
+pub mod input_layout;
 mod math;
 mod transform;
 mod tridify;

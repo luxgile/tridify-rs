@@ -172,7 +172,8 @@ impl GpuCtx {
     pub fn get_capabilities(&self) -> SurfaceCapabilities {
         match &self.output {
             OutputSurface::Window(wnd) => wnd.surface.get_capabilities(&self.adapter),
-            OutputSurface::Headless(_) => SurfaceCapabilities {
+            OutputSurface::Headless(tex) => SurfaceCapabilities {
+                usages: tex.desc.usage.get_wgpu_usages(),
                 present_modes: vec![PresentMode::AutoVsync],
                 formats: vec![DEFAULT_FORMAT],
                 alpha_modes: vec![wgpu::CompositeAlphaMode::Auto],

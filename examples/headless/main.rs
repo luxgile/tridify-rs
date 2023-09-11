@@ -18,7 +18,6 @@ async fn run() -> Result<(), Box<dyn Error>> {
     );
 
     //Create brush to draw the shapes.
-    //TODO: Maybe changing from WSL to SPIRV works?
     let mut brush = Brush::from_source(
         BrushDesc::default(),
         &gpu_ctx,
@@ -59,7 +58,6 @@ async fn run() -> Result<(), Box<dyn Error>> {
         image.save("output.png").unwrap();
     }
     output_buffer.unmap();
-    //TODO: Output file does not make sense. Need to use RenderDoc API to debug issue.
-    //TODO: Most likely an issue with pic format and data pulled from buffer.
+
     Ok(())
 }

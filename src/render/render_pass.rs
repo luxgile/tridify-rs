@@ -32,6 +32,7 @@ impl Default for RenderOptions {
 pub struct GpuCommands {
     gpu_commands: CommandEncoder,
     frame_view: TextureView,
+    surface: Option<SurfaceTexture>,
 }
 impl GpuCommands {
     pub fn from_gpu(gpu: &GpuCtx) -> Result<Self, Box<dyn Error>> {
@@ -40,8 +41,18 @@ impl GpuCommands {
             .device
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
 
+        let surface: Option<SurfaceTexture> = {
+            if let OutputSurface::Window(wnd) = gpu.get_output() {
+                let frame_texture = wnd.surface.get_current_texture().unwrap();
+                Some(frame_texture)
+            } else {
+                None
+            }
+        };
+
         Ok(Self {
             gpu_commands,
+            surface,
             frame_view,
         })
     }
@@ -89,8 +100,8 @@ impl GpuCommands {
 
     pub fn complete(self, gpu: &GpuCtx) {
         gpu.queue.submit(Some(self.gpu_commands.finish()));
-        if let OutputSurface::Window(wnd) = gpu.get_output() {
-            wnd.surface.get_current_texture().unwrap().present();
+        if let Some(surface) = self.surface {
+            surface.present();
         }
     }
 }

@@ -20,6 +20,28 @@ bitflags::bitflags! {
     }
 }
 
+impl TextureUsage {
+    pub fn get_wgpu_usages(&self) -> TextureUsages {
+        let mut usage = TextureUsages::empty();
+        if self.contains(TextureUsage::DESTINATION) {
+            usage |= TextureUsages::COPY_DST;
+        }
+        if self.contains(TextureUsage::SOURCE) {
+            usage |= TextureUsages::COPY_SRC;
+        }
+        if self.contains(TextureUsage::TEXTURE_BIND) {
+            usage |= TextureUsages::TEXTURE_BINDING;
+        }
+        if self.contains(TextureUsage::STORAGE_BIND) {
+            usage |= TextureUsages::STORAGE_BINDING;
+        }
+        if self.contains(TextureUsage::RENDER) {
+            usage |= TextureUsages::RENDER_ATTACHMENT;
+        }
+        usage
+    }
+}
+
 #[derive(Debug)]
 pub enum TextureSize {
     D1(u32),
@@ -57,25 +79,7 @@ pub struct TextureDesc {
     pub format: wgpu::TextureFormat,
 }
 impl TextureDesc {
-    fn get_wgpu_usage(&self) -> TextureUsages {
-        let mut usage = TextureUsages::empty();
-        if self.usage.contains(TextureUsage::DESTINATION) {
-            usage |= TextureUsages::COPY_DST;
-        }
-        if self.usage.contains(TextureUsage::SOURCE) {
-            usage |= TextureUsages::COPY_SRC;
-        }
-        if self.usage.contains(TextureUsage::TEXTURE_BIND) {
-            usage |= TextureUsages::TEXTURE_BINDING;
-        }
-        if self.usage.contains(TextureUsage::STORAGE_BIND) {
-            usage |= TextureUsages::STORAGE_BINDING;
-        }
-        if self.usage.contains(TextureUsage::RENDER) {
-            usage |= TextureUsages::RENDER_ATTACHMENT;
-        }
-        usage
-    }
+    fn get_wgpu_usage(&self) -> TextureUsages { self.usage.get_wgpu_usages() }
 }
 
 /// GPU texture handle.

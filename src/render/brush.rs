@@ -6,7 +6,7 @@ use wgpu::{
     ShaderModule, ShaderModuleDescriptor, VertexState,
 };
 
-use crate::{Binder, GpuCtx, ToBinder, Vertex};
+use crate::{input_layout::InputLayout, Binder, GpuCtx, ToBinder, Vertex};
 
 pub enum AlphaBlend {
     Default,
@@ -76,6 +76,7 @@ pub struct Brush {
     cached_pipeline: Option<RenderPipeline>,
     cached_bindings: Vec<(u32, BindGroup)>,
     assets_to_bind: HashMap<u32, Binder>,
+    input_layout: InputLayout,
     needs_update: bool,
 }
 
@@ -104,9 +105,12 @@ impl Brush {
             assets_to_bind: HashMap::new(),
             cached_bindings: Vec::new(),
             cached_pipeline: None,
+            input_layout: InputLayout::new_vertex_standard(),
             needs_update: true,
         })
     }
+
+    pub fn set_input_layout(&mut self, layout: InputLayout) { self.input_layout = layout; }
 
     /// Bind asset given a group and location index. Both indices need to match with shader's or it
     /// will panic when baking and linking with rendering pipeline.
@@ -148,7 +152,8 @@ impl Brush {
             vertex: VertexState {
                 module: &self.compiled_shader,
                 entry_point: "vs_main",
-                buffers: &[Vertex::DESC],
+                // buffers: &[Vertex::DESC], //TODO: Get InputLayout into here!
+                buffers: &self.input_layout.bake(),
             },
             fragment: Some(FragmentState {
                 module: &self.compiled_shader,
