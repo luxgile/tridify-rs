@@ -2,7 +2,7 @@ use std::error::Error;
 
 use wgpu::{
     CommandEncoder, CommandEncoderDescriptor, Extent3d, Operations, RenderPassColorAttachment,
-    RenderPassDescriptor, SurfaceTexture, TextureView,
+    RenderPassDescriptor, SurfaceTexture, TextureView, TextureViewDescriptor,
 };
 use wgpu::{ImageCopyBuffer, ImageCopyTexture, Origin3d, TextureAspect};
 
@@ -36,18 +36,20 @@ pub struct GpuCommands {
 }
 impl GpuCommands {
     pub fn from_gpu(gpu: &GpuCtx) -> Result<Self, Box<dyn Error>> {
-        let frame_view = gpu.get_output().get_texture_view();
         let gpu_commands = gpu
             .device
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
 
-        let surface: Option<SurfaceTexture> = {
-            if let OutputSurface::Window(wnd) = gpu.get_output() {
+        //TODO: Surface needs to store both surface texture and surface texture view!
+        let (surface, frame_view) = match gpu.get_output() {
+            OutputSurface::Window(wnd) => {
                 let frame_texture = wnd.surface.get_current_texture().unwrap();
-                Some(frame_texture)
-            } else {
-                None
+                let frame_view = frame_texture
+                    .texture
+                    .create_view(&TextureViewDescriptor::default());
+                (Some(frame_texture), frame_view)
             }
+            OutputSurface::Headless(tex) => (None, tex.create_wgpu_view()),
         };
 
         Ok(Self {
