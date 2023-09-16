@@ -10,7 +10,7 @@ pub trait ToGpuBuf {
 
 /// Handle to a GPU buffer.
 pub struct GpuBuffer {
-    //TODO: MAke it private
+    //TODO: Make it private
     pub buffer: Rc<Buffer>,
 }
 
@@ -29,8 +29,8 @@ impl GpuBuffer {
     }
 
     /// Creates a buffer with the given bytes.
-    pub fn init(wnd: &GpuCtx, data: &[u8], usage: wgpu::BufferUsages) -> Self {
-        let buffer = wnd
+    pub fn init(gpu: &GpuCtx, data: &[u8], usage: wgpu::BufferUsages) -> Self {
+        let buffer = gpu
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: None,

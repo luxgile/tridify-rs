@@ -10,16 +10,18 @@ pub struct InputLayout {
     groups: Vec<InputLayoutGroup>,
 }
 impl InputLayout {
+    pub fn new() -> Self { Self { groups: Vec::new() } }
     /// Returns a InputLayout with only a Vec3 on loc 0 for vertex position
     pub fn new_vertex_minimal() -> InputLayout {
-        let mut layout = InputLayout { groups: Vec::new() };
+        let mut layout = InputLayout::new();
         layout.group_per_vertex().add_input(InputType::Vec3);
         layout
     }
 
-    /// Returns a InputLayout with Vec3 for position, Vec4 for color and Vec2 for uvs
+    /// Returns a InputLayout with Vec3 for position, Vec4 for color and Vec2 for uvs.
+    /// This is the default used when no InputLayout is specified.
     pub fn new_vertex_standard() -> InputLayout {
-        let mut layout = InputLayout { groups: Vec::new() };
+        let mut layout = InputLayout::new();
         layout
             .group_per_vertex()
             .add_input(InputType::Vec3)
@@ -66,7 +68,7 @@ impl InputLayoutGroupType {
     fn get_step_mode(&self) -> VertexStepMode {
         match self {
             InputLayoutGroupType::Vertex => VertexStepMode::Vertex,
-            InputLayoutGroupType::Instance => VertexStepMode::Vertex,
+            InputLayoutGroupType::Instance => VertexStepMode::Instance,
         }
     }
 }

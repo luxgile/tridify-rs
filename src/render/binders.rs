@@ -45,7 +45,7 @@ impl Binder {
         for (i, bind) in self.bindings.iter() {
             let cell = bind.as_ref();
             let borrowed_tobind = cell.borrow();
-            println!("Loc: {:?} - Bind: {:?}", i, bind);
+            // println!("Loc: {:?} - Bind: {:?}", i, bind);
             bind_entries.push((*i, borrowed_tobind));
         }
         let groups = bind_entries

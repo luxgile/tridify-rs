@@ -4,7 +4,7 @@ use wgpu::{
     Buffer, BufferUsages,
 };
 
-use crate::{vertex, Color, GpuCtx, Rect, Vertex};
+use crate::{vertex, Color, GpuBuffer, GpuCtx, Rect, Vertex};
 
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
@@ -15,9 +15,30 @@ impl Mesh {
     pub fn new(vertices: Vec<Vertex>, tris: Vec<u32>) -> Self { Self { vertices, tris } }
 }
 
+pub struct InstanceBuffer<T: bytemuck::Pod> {
+    pub data: Vec<T>,
+}
+impl<T: bytemuck::Pod> InstanceBuffer<T> {
+    pub fn new() -> Self { InstanceBuffer { data: Vec::new() } }
+    pub fn len(&self) -> usize { self.data.len() }
+    pub fn clear(&mut self) { self.data.clear(); }
+    pub fn push_instance(&mut self, data: T) { self.data.push(data); }
+    pub fn bake(&self, gpu: &GpuCtx) -> GpuBuffer {
+        GpuBuffer::init(
+            gpu,
+            bytemuck::cast_slice(&self.data),
+            wgpu::BufferUsages::VERTEX, //TODO: This might actually be INSTANCE
+        )
+    }
+}
+
+impl<T: bytemuck::Pod> Default for InstanceBuffer<T> {
+    fn default() -> Self { Self::new() }
+}
+
 // ///Buffers created from the batch and prepared to be sent directly to the GPU
 // #[derive(Debug)]
-pub struct ShapeBuffer {
+pub struct VertexBuffer {
     pub vertex_buffer: Buffer,
     pub index_buffer: Buffer,
     pub index_len: u32,
@@ -41,7 +62,7 @@ impl ShapeBatch {
     }
 
     ///Create buffers based on current batch data.
-    pub fn bake_buffers(&self, ctx: &GpuCtx) -> ShapeBuffer {
+    pub fn bake_buffers(&self, ctx: &GpuCtx) -> VertexBuffer {
         let device = &ctx.device;
         let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: None,
@@ -53,7 +74,7 @@ impl ShapeBatch {
             contents: bytemuck::cast_slice(&self.indices),
             usage: BufferUsages::INDEX,
         });
-        ShapeBuffer {
+        VertexBuffer {
             vertex_buffer,
             index_buffer,
             index_len: self.indices.len() as u32,

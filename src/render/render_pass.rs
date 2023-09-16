@@ -7,12 +7,12 @@ use wgpu::{
 use wgpu::{ImageCopyBuffer, ImageCopyTexture, Origin3d, TextureAspect};
 
 use crate::core::Color;
-use crate::GpuBuffer;
 use crate::GpuCtx;
 use crate::OutputSurface;
 use crate::Rect;
-use crate::ShapeBuffer;
 use crate::Texture;
+use crate::VertexBuffer;
+use crate::{GpuBuffer, InstanceBuffer};
 
 use super::Brush;
 
@@ -124,16 +124,23 @@ impl<'a> RenderPass<'a> {
         );
     }
 
+    //TODO: Change "ShapeBuffer" into "VertexInput"
     ///Draw batch on the canvas.
-    pub fn render_shapes(&mut self, gpu: &GpuCtx, brush: &'a mut Brush, buffer: &'a ShapeBuffer) {
+    pub fn render_shapes(
+        &mut self, gpu: &GpuCtx, brush: &'a mut Brush, buffer: &'a VertexBuffer,
+        instance: Option<(u32, &'a GpuBuffer)>,
+    ) {
         if brush.needs_update() {
             brush.update(gpu);
         }
-        self.render_shapes_cached(brush, buffer);
+        self.render_shapes_cached(brush, buffer, instance);
     }
 
     /// Draw batch on canvas. Does not check if brush requires any changes.
-    pub fn render_shapes_cached(&mut self, brush: &'a Brush, buffer: &'a ShapeBuffer) {
+    pub fn render_shapes_cached(
+        &mut self, brush: &'a Brush, buffer: &'a VertexBuffer,
+        instance: Option<(u32, &'a GpuBuffer)>,
+    ) {
         let pipeline = brush.get_pipeline();
         self.pass.set_pipeline(pipeline);
         let bind_groups = brush.get_bind_groups();
@@ -141,11 +148,21 @@ impl<'a> RenderPass<'a> {
             .iter()
             .for_each(|(id, bg)| self.pass.set_bind_group(*id, bg, &[]));
 
+        //Vertex input
         self.pass
             .set_vertex_buffer(0, buffer.vertex_buffer.slice(..));
         self.pass
             .set_index_buffer(buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-        self.pass.draw_indexed(0..buffer.index_len, 0, 0..1);
+
+        //Instance input
+        let mut instance_count = 1;
+        if let Some(buffer) = instance {
+            instance_count = buffer.0;
+            self.pass.set_vertex_buffer(1, buffer.1.buffer.slice(..));
+        }
+
+        self.pass
+            .draw_indexed(0..buffer.index_len, 0, 0..instance_count);
     }
 
     pub fn finish(self) {

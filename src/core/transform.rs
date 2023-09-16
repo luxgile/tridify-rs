@@ -1,6 +1,7 @@
 use glam::{Affine3A, Mat4, Quat, Vec3};
 
 /// Representation for position, rotation and scale.
+#[derive(Clone, Copy)]
 pub struct Transform {
     affine: Affine3A,
 }
