@@ -34,14 +34,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     brush.bind(1, 1, sampler);
 
     //Create and bake a shape batch with a cube in it.
-    let shape_buffer = ShapeBatch::new()
+    let shape_buffer = VertexBufferBuilder::new()
         .add_cube(
             Vec3::ZERO,
             Quat::from_rotation_x(35.) * Quat::from_rotation_y(35.),
             Vec3::ONE * 5.,
             Color::WHITE,
         )
-        .bake_buffers(gpu_ctx);
+        .build_buffers(gpu_ctx);
 
     //Setup the window render loop.
     window.set_render_loop(move |gpu, frame_ctx| {

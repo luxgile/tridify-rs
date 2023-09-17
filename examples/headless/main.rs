@@ -25,13 +25,13 @@ async fn run() -> Result<(), Box<dyn Error>> {
     )?;
 
     //Create a shape batch, add a triangle to it and create a GPU buffer with mesh data.
-    let buffer = ShapeBatch::new()
+    let buffer = VertexBufferBuilder::new()
         .add_triangle([
             vertex!(-0.5, -0.5, 0.0, Color::SILVER),
             vertex!(0.5, -0.5, 0.0, Color::SILVER),
             vertex!(0.0, 0.5, 0.0, Color::SILVER),
         ])
-        .bake_buffers(&gpu_ctx);
+        .build_buffers(&gpu_ctx);
 
     let mut gpu_cmds = gpu_ctx.create_gpu_cmds();
     let mut render_pass = gpu_cmds.start_render_pass(RenderOptions::default());

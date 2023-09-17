@@ -4,7 +4,7 @@ use wgpu::{
     Buffer, BufferUsages,
 };
 
-use crate::{vertex, Color, GpuBuffer, GpuCtx, Rect, Vertex};
+use crate::{vertex, Color, GpuBuffer, GpuCtx, Rect, Transform, Vertex};
 
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
@@ -15,44 +15,55 @@ impl Mesh {
     pub fn new(vertices: Vec<Vertex>, tris: Vec<u32>) -> Self { Self { vertices, tris } }
 }
 
-pub struct InstanceBuffer<T: bytemuck::Pod> {
-    pub data: Vec<T>,
+pub struct InstanceBufferBuilder<T> {
+    data: Vec<T>,
 }
-impl<T: bytemuck::Pod> InstanceBuffer<T> {
-    pub fn new() -> Self { InstanceBuffer { data: Vec::new() } }
+impl<T> InstanceBufferBuilder<T> {
     pub fn len(&self) -> usize { self.data.len() }
+    pub fn new() -> Self { InstanceBufferBuilder { data: Vec::new() } }
     pub fn clear(&mut self) { self.data.clear(); }
     pub fn push_instance(&mut self, data: T) { self.data.push(data); }
-    pub fn bake(&self, gpu: &GpuCtx) -> GpuBuffer {
-        GpuBuffer::init(
+}
+impl<T: bytemuck::Pod> InstanceBufferBuilder<T> {
+    pub fn bake(&self, gpu: &GpuCtx) -> InstanceBuffer {
+        let buffer = GpuBuffer::init(
             gpu,
             bytemuck::cast_slice(&self.data),
             wgpu::BufferUsages::VERTEX, //TODO: This might actually be INSTANCE
-        )
+        );
+        InstanceBuffer {
+            buffer,
+            length: self.len() as u32,
+        }
     }
 }
 
-impl<T: bytemuck::Pod> Default for InstanceBuffer<T> {
+impl<T: bytemuck::Pod> Default for InstanceBufferBuilder<T> {
     fn default() -> Self { Self::new() }
+}
+
+pub struct InstanceBuffer {
+    pub buffer: GpuBuffer,
+    pub length: u32,
 }
 
 // ///Buffers created from the batch and prepared to be sent directly to the GPU
 // #[derive(Debug)]
 pub struct VertexBuffer {
-    pub vertex_buffer: Buffer,
-    pub index_buffer: Buffer,
+    pub vertex_buffer: GpuBuffer,
+    pub index_buffer: GpuBuffer,
     pub index_len: u32,
 }
 
 // ///Queue of shapes to be drawn. All shapes added to the same batch will be drawn at the same time using the same brush.
 #[derive(Default, Debug)]
-pub struct ShapeBatch {
+pub struct VertexBufferBuilder {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
     pub index_id_counter: u32,
 }
 
-impl ShapeBatch {
+impl VertexBufferBuilder {
     pub fn new() -> Self {
         Self {
             vertices: Vec::new(),
@@ -62,18 +73,17 @@ impl ShapeBatch {
     }
 
     ///Create buffers based on current batch data.
-    pub fn bake_buffers(&self, ctx: &GpuCtx) -> VertexBuffer {
-        let device = &ctx.device;
-        let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::cast_slice(&self.vertices),
-            usage: BufferUsages::VERTEX,
-        });
-        let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::cast_slice(&self.indices),
-            usage: BufferUsages::INDEX,
-        });
+    pub fn build_buffers(&self, gpu: &GpuCtx) -> VertexBuffer {
+        let vertex_buffer = GpuBuffer::init(
+            gpu,
+            bytemuck::cast_slice(&self.vertices),
+            BufferUsages::VERTEX,
+        );
+        let index_buffer = GpuBuffer::init(
+            gpu,
+            bytemuck::cast_slice(&self.indices),
+            BufferUsages::INDEX,
+        );
         VertexBuffer {
             vertex_buffer,
             index_buffer,
@@ -81,7 +91,7 @@ impl ShapeBatch {
         }
     }
 
-    pub fn add_mesh(&mut self, mesh: Mesh) -> &mut ShapeBatch {
+    pub fn add_mesh(&mut self, mesh: Mesh) -> &mut VertexBufferBuilder {
         self.vertices.extend(&mesh.vertices);
         self.indices.extend(&mesh.tris);
         self.index_id_counter += mesh.vertices.len() as u32;
@@ -89,7 +99,7 @@ impl ShapeBatch {
     }
 
     ///Add a triangle to the batch specifying its 3 vertices
-    pub fn add_triangle(&mut self, v: [Vertex; 3]) -> &mut ShapeBatch {
+    pub fn add_triangle(&mut self, v: [Vertex; 3]) -> &mut VertexBufferBuilder {
         let index = self.index_id_counter;
         self.vertices.push(v[0]);
         self.indices.push(index);
@@ -102,13 +112,15 @@ impl ShapeBatch {
     }
 
     ///Add a square using a Rect as input
-    pub fn add_rect(&mut self, rect: &Rect, color: Color) -> &mut ShapeBatch {
+    pub fn add_rect(&mut self, rect: &Rect, color: Color) -> &mut VertexBufferBuilder {
         self.add_2d_square(rect.center().extend(0.), rect.size.x, rect.size.y, color);
         self
     }
 
     ///Add a square on axis XY to the batch specifying the center, width, height and color.
-    pub fn add_2d_square(&mut self, center: Vec3, w: f32, h: f32, color: Color) -> &mut ShapeBatch {
+    pub fn add_2d_square(
+        &mut self, center: Vec3, w: f32, h: f32, color: Color,
+    ) -> &mut VertexBufferBuilder {
         //Adding vertices
         let hw = w / 2.0;
         let hh = h / 2.0;
@@ -137,7 +149,7 @@ impl ShapeBatch {
     ///Add a square to the batch specifying the center, width, height and color.
     pub fn add_square(
         &mut self, center: Vec3, up: Vec3, normal: Vec3, w: f32, h: f32, color: Color,
-    ) -> &mut ShapeBatch {
+    ) -> &mut VertexBufferBuilder {
         //Adding vertices
         let right = up.cross(normal).normalize();
         let hw = w / 2.0;
@@ -180,7 +192,7 @@ impl ShapeBatch {
     ///Add a cube to the batch specifying the center, orientation, size and color.
     pub fn add_cube(
         &mut self, center: Vec3, orientation: Quat, scale: Vec3, color: Color,
-    ) -> &mut ShapeBatch {
+    ) -> &mut VertexBufferBuilder {
         let hw = scale.x / 2.0;
         let hh = scale.y / 2.0;
         let hd = scale.z / 2.0;
