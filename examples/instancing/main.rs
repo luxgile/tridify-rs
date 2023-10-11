@@ -2,7 +2,7 @@ use std::{error::Error, path::Path};
 
 use glam::{Mat4, Quat, Vec3};
 use tridify_rs::{
-    input_layout::{InputLayout, InputType},
+    input_layout::{InputLayout, InputLayoutGroup, InputType},
     *,
 };
 
@@ -30,13 +30,15 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
     //We need to modify the standard input layout to include our instance data.
     //In this case to include a Matrix4x4 we need to add four times a Vec4.
-    let mut input_layout = InputLayout::new_vertex_standard();
-    input_layout
-        .group_per_instance()
+    let mut input_layout = InputLayout::new();
+    input_layout.set_vertex_input(InputLayoutGroup::new_vertex_standard());
+    let mut instance_layout = InputLayoutGroup::new_instance();
+    instance_layout
         .add_input(InputType::Vec4)
         .add_input(InputType::Vec4)
         .add_input(InputType::Vec4)
         .add_input(InputType::Vec4);
+    input_layout.set_instance_input(instance_layout);
     brush.set_input_layout(input_layout);
 
     //Create and bake a shape batch with a cube in it.
@@ -67,5 +69,5 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     });
 
     //Start program logic cycle.
-    app.start(());
+    app.start(())
 }

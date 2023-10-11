@@ -6,7 +6,10 @@ use wgpu::{
     ShaderModule, ShaderModuleDescriptor, VertexState,
 };
 
-use crate::{input_layout::InputLayout, Binder, GpuCtx, ToBinder, Vertex};
+use crate::{
+    input_layout::{self, InputLayout, InputLayoutGroup},
+    Binder, GpuCtx, ToBinder, Vertex,
+};
 
 pub enum AlphaBlend {
     Default,
@@ -99,13 +102,15 @@ impl Brush {
             label: None,
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(shader_source.as_str())),
         });
+        let mut input_layout = InputLayout::new();
+        input_layout.set_vertex_input(InputLayoutGroup::new_vertex_standard());
         Ok(Self {
             desc,
             compiled_shader: shader,
             assets_to_bind: HashMap::new(),
             cached_bindings: Vec::new(),
             cached_pipeline: None,
-            input_layout: InputLayout::new_vertex_standard(),
+            input_layout,
             needs_update: true,
         })
     }

@@ -5,61 +5,42 @@
 
 use wgpu::{VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
 
-#[derive(Default)]
 pub struct InputLayout {
-    groups: Vec<InputLayoutGroup>,
+    pub vertex: Option<InputLayoutGroup>,
+    pub instance: Option<InputLayoutGroup>,
 }
 impl InputLayout {
-    pub fn new() -> Self { Self { groups: Vec::new() } }
-    /// Returns a InputLayout with only a Vec3 on loc 0 for vertex position
-    pub fn new_vertex_minimal() -> InputLayout {
-        let mut layout = InputLayout::new();
-        layout.group_per_vertex().add_input(InputType::Vec3);
-        layout
+    pub fn new() -> Self {
+        Self {
+            vertex: None,
+            instance: None,
+        }
     }
 
-    /// Returns a InputLayout with Vec3 for position, Vec4 for color and Vec2 for uvs.
-    /// This is the default used when no InputLayout is specified.
-    pub fn new_vertex_standard() -> InputLayout {
-        let mut layout = InputLayout::new();
-        layout
-            .group_per_vertex()
-            .add_input(InputType::Vec3)
-            .add_input(InputType::Vec4)
-            .add_input(InputType::Vec2);
-        layout
+    pub fn set_vertex_input(&mut self, input: InputLayoutGroup) {
+        assert!(InputLayoutGroupType::Vertex == input.ty);
+        self.vertex = Some(input);
     }
 
-    pub fn group_per_vertex(&mut self) -> &mut InputLayoutGroup {
-        let group = InputLayoutGroup {
-            ty: InputLayoutGroupType::Vertex,
-            inputs: Vec::new(),
-            cached_attributes: Vec::new(),
-        };
-        self.groups.push(group);
-        self.groups.last_mut().unwrap()
-    }
-
-    pub fn group_per_instance(&mut self) -> &mut InputLayoutGroup {
-        let group = InputLayoutGroup {
-            ty: InputLayoutGroupType::Instance,
-            inputs: Vec::new(),
-            cached_attributes: Vec::new(),
-        };
-        self.groups.push(group);
-        self.groups.last_mut().unwrap()
+    pub fn set_instance_input(&mut self, input: InputLayoutGroup) {
+        assert!(input.ty == InputLayoutGroupType::Instance);
+        self.instance = Some(input);
     }
 
     pub fn bake(&mut self) -> Vec<VertexBufferLayout> {
         let mut baked_groups = Vec::new();
         let mut start_loc = 0;
-        for group in &mut self.groups {
-            baked_groups.push(group.bake_layout(&mut start_loc));
+        if let Some(input) = &mut self.vertex {
+            baked_groups.push(input.bake_layout(&mut start_loc));
+        }
+        if let Some(input) = &mut self.instance {
+            baked_groups.push(input.bake_layout(&mut start_loc));
         }
         baked_groups
     }
 }
 
+#[derive(PartialEq)]
 enum InputLayoutGroupType {
     Vertex,
     Instance,
@@ -80,6 +61,40 @@ pub struct InputLayoutGroup {
 }
 
 impl InputLayoutGroup {
+    pub fn new_vertex() -> Self {
+        Self {
+            ty: InputLayoutGroupType::Vertex,
+            inputs: Vec::new(),
+            cached_attributes: Vec::new(),
+        }
+    }
+
+    pub fn new_instance() -> Self {
+        Self {
+            ty: InputLayoutGroupType::Instance,
+            inputs: Vec::new(),
+            cached_attributes: Vec::new(),
+        }
+    }
+
+    /// Returns a InputLayout with only a Vec3 on loc 0 for vertex position
+    pub fn new_vertex_minimal() -> InputLayoutGroup {
+        let mut group = Self::new_vertex();
+        group.add_input(InputType::Vec3);
+        group
+    }
+
+    /// Returns a InputLayout with Vec3 for position, Vec4 for color and Vec2 for uvs.
+    /// This is the default used when no InputLayout is specified.
+    pub fn new_vertex_standard() -> InputLayoutGroup {
+        let mut group = Self::new_vertex();
+        group
+            .add_input(InputType::Vec3)
+            .add_input(InputType::Vec4)
+            .add_input(InputType::Vec2);
+        group
+    }
+
     pub fn add_input(&mut self, input: InputType) -> &mut InputLayoutGroup {
         self.inputs.push(input);
         self

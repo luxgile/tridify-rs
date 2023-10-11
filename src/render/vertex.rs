@@ -17,7 +17,7 @@ unsafe impl Pod for Vertex {
 }
 
 impl Vertex {
-    pub const DESC: VertexBufferLayout<'static> = VertexBufferLayout {
+    pub const DEFAULT_DESC: VertexBufferLayout<'static> = VertexBufferLayout {
         array_stride: size_of::<Vertex>() as BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
         attributes: &[

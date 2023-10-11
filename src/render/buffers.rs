@@ -1,3 +1,4 @@
+use bytemuck::Pod;
 use glam::{Quat, Vec3};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -57,13 +58,13 @@ pub struct VertexBuffer {
 
 // ///Queue of shapes to be drawn. All shapes added to the same batch will be drawn at the same time using the same brush.
 #[derive(Default, Debug)]
-pub struct VertexBufferBuilder {
-    pub vertices: Vec<Vertex>,
+pub struct VertexBufferBuilder<T> {
+    pub vertices: Vec<T>,
     pub indices: Vec<u32>,
     pub index_id_counter: u32,
 }
 
-impl VertexBufferBuilder {
+impl<T: Pod> VertexBufferBuilder<T> {
     pub fn new() -> Self {
         Self {
             vertices: Vec::new(),
@@ -90,8 +91,10 @@ impl VertexBufferBuilder {
             index_len: self.indices.len() as u32,
         }
     }
+}
 
-    pub fn add_mesh(&mut self, mesh: Mesh) -> &mut VertexBufferBuilder {
+impl VertexBufferBuilder<Vertex> {
+    pub fn add_mesh(&mut self, mesh: Mesh) -> &mut VertexBufferBuilder<Vertex> {
         self.vertices.extend(&mesh.vertices);
         self.indices.extend(&mesh.tris);
         self.index_id_counter += mesh.vertices.len() as u32;
@@ -99,7 +102,7 @@ impl VertexBufferBuilder {
     }
 
     ///Add a triangle to the batch specifying its 3 vertices
-    pub fn add_triangle(&mut self, v: [Vertex; 3]) -> &mut VertexBufferBuilder {
+    pub fn add_triangle(&mut self, v: [Vertex; 3]) -> &mut VertexBufferBuilder<Vertex> {
         let index = self.index_id_counter;
         self.vertices.push(v[0]);
         self.indices.push(index);
@@ -112,7 +115,7 @@ impl VertexBufferBuilder {
     }
 
     ///Add a square using a Rect as input
-    pub fn add_rect(&mut self, rect: &Rect, color: Color) -> &mut VertexBufferBuilder {
+    pub fn add_rect(&mut self, rect: &Rect, color: Color) -> &mut VertexBufferBuilder<Vertex> {
         self.add_2d_square(rect.center().extend(0.), rect.size.x, rect.size.y, color);
         self
     }
@@ -120,7 +123,7 @@ impl VertexBufferBuilder {
     ///Add a square on axis XY to the batch specifying the center, width, height and color.
     pub fn add_2d_square(
         &mut self, center: Vec3, w: f32, h: f32, color: Color,
-    ) -> &mut VertexBufferBuilder {
+    ) -> &mut VertexBufferBuilder<Vertex> {
         //Adding vertices
         let hw = w / 2.0;
         let hh = h / 2.0;
@@ -149,7 +152,7 @@ impl VertexBufferBuilder {
     ///Add a square to the batch specifying the center, width, height and color.
     pub fn add_square(
         &mut self, center: Vec3, up: Vec3, normal: Vec3, w: f32, h: f32, color: Color,
-    ) -> &mut VertexBufferBuilder {
+    ) -> &mut VertexBufferBuilder<Vertex> {
         //Adding vertices
         let right = up.cross(normal).normalize();
         let hw = w / 2.0;
@@ -192,7 +195,7 @@ impl VertexBufferBuilder {
     ///Add a cube to the batch specifying the center, orientation, size and color.
     pub fn add_cube(
         &mut self, center: Vec3, orientation: Quat, scale: Vec3, color: Color,
-    ) -> &mut VertexBufferBuilder {
+    ) -> &mut VertexBufferBuilder<Vertex> {
         let hw = scale.x / 2.0;
         let hh = scale.y / 2.0;
         let hd = scale.z / 2.0;
