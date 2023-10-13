@@ -210,4 +210,22 @@ impl VertexBufferBuilder<Vertex> {
         self.add_square(center - forw * hd, up, -forw, scale.x, scale.y, color);
         self
     }
+
+    pub fn add_inv_cube(
+        &mut self, center: Vec3, orientation: Quat, scale: Vec3, color: Color,
+    ) -> &mut VertexBufferBuilder<Vertex> {
+        let hw = scale.x / 2.0;
+        let hh = scale.y / 2.0;
+        let hd = scale.z / 2.0;
+        let right = orientation * Vec3::X;
+        let up = orientation * Vec3::Y;
+        let forw = orientation * Vec3::Z;
+        self.add_square(center + right * hw, up, -right, scale.y, scale.z, color);
+        self.add_square(center - right * hw, up, right, scale.y, scale.z, color);
+        self.add_square(center + up * hh, forw, -up, scale.x, scale.z, color);
+        self.add_square(center - up * hh, forw, up, scale.x, scale.z, color);
+        self.add_square(center + forw * hd, up, -forw, scale.x, scale.y, color);
+        self.add_square(center - forw * hd, up, forw, scale.x, scale.y, color);
+        self
+    }
 }

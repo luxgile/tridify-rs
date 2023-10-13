@@ -42,7 +42,7 @@ impl TextureUsage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TextureSize {
     D1(u32),
     D2(UVec2),
@@ -72,7 +72,7 @@ impl TextureSize {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TextureDesc {
     pub size: TextureSize,
     pub usage: TextureUsage,
@@ -222,4 +222,16 @@ impl ToBinder for Texture {
     }
 
     fn debug_name(&self) -> &'static str { "Texture" }
+}
+
+impl Clone for Texture {
+    fn clone(&self) -> Self {
+        let texture = Rc::clone(&self.texture);
+        let texture_view = texture.create_view(&TextureViewDescriptor::default());
+        Self {
+            desc: self.desc.clone(),
+            texture,
+            cached_view: texture_view,
+        }
+    }
 }

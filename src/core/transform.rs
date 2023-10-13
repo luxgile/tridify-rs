@@ -13,6 +13,9 @@ impl Transform {
         }
     }
 
+    pub fn get_pos(&self) -> Vec3 { self.affine.translation.into() }
+    pub fn set_pos(&mut self, pos: Vec3) { self.affine.translation = pos.into() }
+
     /// Create transform based only on position. Rotation and scale will have default values.
     pub fn from_pos(position: Vec3) -> Self { Transform::new(position, Quat::IDENTITY, Vec3::ONE) }
 
