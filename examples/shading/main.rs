@@ -7,7 +7,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Tridify::new();
     let window = app.create_window()?;
+
+    //Init egui for testing
+    window.init_egui();
+
     let gpu_ctx = window.ctx();
+
+    let mut egui_pass = EguiPass::new(gpu_ctx);
 
     //Load texture from path.
     let texture = Texture::from_path(gpu_ctx, Path::new(r#"examples/texture_cube/texture.png"#));
@@ -59,11 +65,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     window.set_render_loop(move |gpu, frame_ctx| {
         let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32);
         let cached_pos = camera.view.get_pos();
-        println!("{}", cached_pos);
 
         //Render frame as usual.
         let mut pass_builder = gpu.create_gpu_cmds();
         let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
+
         //Render skybox
         camera.view.set_pos(Vec3::ZERO);
         let mvp = camera.build_camera_matrix() * model;
@@ -76,6 +82,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         //Updating the gpu buffer will update all brushes binded as well.
         camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
         render_pass.render_shapes(gpu, &mut cube_brush, &cube_shape_buffer, None);
+
+        gpu.egui_start(frame_ctx.delta_time);
+
+        egui::CentralPanel::default().show(&gpu.egui_ctx(), |ui| {
+            ui.heading("Testing");
+        });
+
+        egui_pass.render(gpu);
+
         render_pass.finish();
         pass_builder.complete(gpu);
     });

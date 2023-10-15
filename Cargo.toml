@@ -46,3 +46,7 @@ renderdoc = "0.11.0"
 [[example]]
 name = "egui"
 required-features = ["egui"]
+
+[[example]]
+name = "shading"
+required-features = ["egui"]
