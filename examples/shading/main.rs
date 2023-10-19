@@ -13,8 +13,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let gpu_ctx = window.ctx();
 
-    let mut egui_pass = EguiPass::new(gpu_ctx);
-
     //Load texture from path.
     let texture = Texture::from_path(gpu_ctx, Path::new(r#"examples/texture_cube/texture.png"#));
 
@@ -76,22 +74,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
         render_pass.render_shapes(gpu, &mut skybox_brush, &skybox_shape_buffer, None);
 
-        camera.view.set_pos(cached_pos);
-        let mvp = camera.build_camera_matrix() * model;
-
-        //Updating the gpu buffer will update all brushes binded as well.
-        camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
-        render_pass.render_shapes(gpu, &mut cube_brush, &cube_shape_buffer, None);
-
-        gpu.egui_start(frame_ctx.delta_time);
-
-        egui::CentralPanel::default().show(&gpu.egui_ctx(), |ui| {
-            ui.heading("Testing");
-        });
-
-        egui_pass.render(gpu);
+        //Render cube
+        // camera.view.set_pos(cached_pos);
+        // let mvp = camera.build_camera_matrix() * model;
+        // camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
+        // render_pass.render_shapes(gpu, &mut cube_brush, &cube_shape_buffer, None);
 
         render_pass.finish();
+
         pass_builder.complete(gpu);
     });
 
