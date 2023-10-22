@@ -18,13 +18,23 @@ use super::Brush;
 
 /// Rendering configuration on how to create and represent the given frame.
 pub struct RenderOptions {
-    pub clear_color: Color,
+    pub clear_color: Option<Color>,
+}
+
+impl RenderOptions {
+    fn wgpu_load(&self) -> wgpu::LoadOp<wgpu::Color> {
+        if let Some(color) = self.clear_color {
+            return wgpu::LoadOp::Clear(color.into());
+        } else {
+            return wgpu::LoadOp::Load;
+        }
+    }
 }
 
 impl Default for RenderOptions {
     fn default() -> Self {
         Self {
-            clear_color: Color::BLACK,
+            clear_color: Some(Color::BLACK),
         }
     }
 }
@@ -66,7 +76,7 @@ impl GpuCommands {
                 view: &self.frame_view,
                 resolve_target: None,
                 ops: Operations {
-                    load: wgpu::LoadOp::Clear(options.clear_color.into()),
+                    load: options.wgpu_load(),
                     store: true,
                 },
             })],

@@ -45,8 +45,8 @@ impl GpuBuffer {
     }
 
     /// Update buffer GPU data with bytes provided.
-    pub fn write(&mut self, wnd: &GpuCtx, data: &[u8]) {
-        wnd.queue.write_buffer(&self.buffer, 0, data);
+    pub fn write(&mut self, gpu: &GpuCtx, data: &[u8]) {
+        gpu.queue.write_buffer(&self.buffer, 0, data);
     }
 
     pub fn get_handle(&self) -> Rc<Buffer> { Rc::clone(&self.buffer) }

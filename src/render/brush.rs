@@ -11,6 +11,44 @@ use crate::{
     Binder, GpuCtx, ToBinder, Vertex,
 };
 
+pub enum ColorBlend {
+    Default,
+    Premultiplied,
+    Additive,
+    SoftAdditive,
+    Multiplied,
+}
+impl From<ColorBlend> for wgpu::BlendComponent {
+    fn from(val: ColorBlend) -> Self {
+        match val {
+            ColorBlend::Default => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::SrcAlpha,
+                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                operation: wgpu::BlendOperation::Add,
+            },
+            ColorBlend::Premultiplied => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::One,
+                dst_factor: wgpu::BlendFactor::OneMinusSrc,
+                operation: wgpu::BlendOperation::Add,
+            },
+            ColorBlend::Additive => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::One,
+                dst_factor: wgpu::BlendFactor::One,
+                operation: wgpu::BlendOperation::Add,
+            },
+            ColorBlend::SoftAdditive => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::OneMinusDst,
+                dst_factor: wgpu::BlendFactor::One,
+                operation: wgpu::BlendOperation::Add,
+            },
+            ColorBlend::Multiplied => wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::Dst,
+                dst_factor: wgpu::BlendFactor::Zero,
+                operation: wgpu::BlendOperation::Add,
+            },
+        }
+    }
+}
 pub enum AlphaBlend {
     Default,
     Premultiplied,
@@ -22,8 +60,8 @@ impl From<AlphaBlend> for wgpu::BlendComponent {
     fn from(val: AlphaBlend) -> Self {
         match val {
             AlphaBlend::Default => wgpu::BlendComponent {
-                src_factor: wgpu::BlendFactor::SrcAlpha,
-                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                src_factor: wgpu::BlendFactor::One,
+                dst_factor: wgpu::BlendFactor::Zero,
                 operation: wgpu::BlendOperation::Add,
             },
             AlphaBlend::Premultiplied => wgpu::BlendComponent {
@@ -53,20 +91,22 @@ impl From<AlphaBlend> for wgpu::BlendComponent {
 pub struct BrushDesc {
     pub blend: wgpu::BlendState,
 }
+impl BrushDesc {
+    pub fn new(color: ColorBlend, alpha: AlphaBlend) -> Self {
+        Self {
+            blend: BlendState {
+                color: color.into(),
+                alpha: alpha.into(),
+            },
+        }
+    }
+}
 impl Default for BrushDesc {
     fn default() -> Self {
         Self {
             blend: BlendState {
-                color: wgpu::BlendComponent {
-                    src_factor: wgpu::BlendFactor::Src,
-                    dst_factor: wgpu::BlendFactor::OneMinusSrc,
-                    operation: wgpu::BlendOperation::Add,
-                },
-                alpha: wgpu::BlendComponent {
-                    src_factor: wgpu::BlendFactor::SrcAlpha,
-                    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                    operation: wgpu::BlendOperation::Add,
-                },
+                color: ColorBlend::Default.into(),
+                    alpha: ColorBlend::Default.into()
             },
         }
     }

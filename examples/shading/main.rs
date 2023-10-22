@@ -9,12 +9,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     let window = app.create_window()?;
 
     //Init egui for testing
-    window.init_egui();
+    // window.init_egui();
 
     let gpu_ctx = window.ctx();
 
     //Load texture from path.
-    let texture = Texture::from_path(gpu_ctx, Path::new(r#"examples/texture_cube/texture.png"#));
+    let texture = Texture::from_path(
+        gpu_ctx,
+        Path::new(r#"D:/Development/Rust Crates/LDrawy/examples/shading/texture.png"#),
+    );
 
     //Sampler defines how the texture will be rendered in shapes.
     let sampler = Sampler::new_default(gpu_ctx);
@@ -23,11 +26,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         Transform::from_look_at(Vec3::NEG_Z * 10.0 + Vec3::Y * 10.0, Vec3::ZERO, Vec3::Y),
         Projection::default(),
     );
+    let mut camera_sky_buf = camera.build_buffer(gpu_ctx);
     let mut camera_buf = camera.build_buffer(gpu_ctx);
 
     //Create brush to draw the shapes.
     let mut cube_brush = Brush::from_source(
-        BrushDesc::default(),
+        BrushDesc::new(ColorBlend::Default, AlphaBlend::Default),
         gpu_ctx,
         include_str!("shader.wgsl").to_string(),
     )?;
@@ -52,7 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         gpu_ctx,
         include_str!("skybox.wgsl").to_string(),
     )?;
-    skybox_brush.bind(0, 0, camera_buf.clone());
+    skybox_brush.bind(0, 0, camera_sky_buf.clone());
     skybox_brush.bind(1, 0, texture);
     skybox_brush.bind(1, 1, sampler);
     let skybox_shape_buffer = VertexBufferBuilder::new()
@@ -66,21 +70,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         //Render frame as usual.
         let mut pass_builder = gpu.create_gpu_cmds();
-        let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
+        let mut skybox_pass = pass_builder.start_render_pass(RenderOptions::default());
 
         //Render skybox
         camera.view.set_pos(Vec3::ZERO);
         let mvp = camera.build_camera_matrix() * model;
-        camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
-        render_pass.render_shapes(gpu, &mut skybox_brush, &skybox_shape_buffer, None);
+        camera_sky_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
+        skybox_pass.render_shapes(gpu, &mut skybox_brush, &skybox_shape_buffer, None);
 
         //Render cube
-        // camera.view.set_pos(cached_pos);
-        // let mvp = camera.build_camera_matrix() * model;
-        // camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
-        // render_pass.render_shapes(gpu, &mut cube_brush, &cube_shape_buffer, None);
-
-        render_pass.finish();
+        camera.view.set_pos(cached_pos);
+        let mvp = camera.build_camera_matrix() * model;
+        camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
+        skybox_pass.render_shapes(gpu, &mut cube_brush, &cube_shape_buffer, None);
+        skybox_pass.finish();
 
         pass_builder.complete(gpu);
     });
