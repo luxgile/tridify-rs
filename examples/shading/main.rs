@@ -70,20 +70,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         //Render frame as usual.
         let mut pass_builder = gpu.create_gpu_cmds();
-        let mut skybox_pass = pass_builder.start_render_pass(RenderOptions::default());
+        let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
 
         //Render skybox
         camera.view.set_pos(Vec3::ZERO);
         let mvp = camera.build_camera_matrix() * model;
         camera_sky_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
-        skybox_pass.render_shapes(gpu, &mut skybox_brush, &skybox_shape_buffer, None);
+        render_pass.render_shapes(gpu, &mut skybox_brush, &skybox_shape_buffer, None);
 
         //Render cube
         camera.view.set_pos(cached_pos);
         let mvp = camera.build_camera_matrix() * model;
         camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
-        skybox_pass.render_shapes(gpu, &mut cube_brush, &cube_shape_buffer, None);
-        skybox_pass.finish();
+        render_pass.render_shapes(gpu, &mut cube_brush, &cube_shape_buffer, None);
+        render_pass.finish();
 
         pass_builder.complete(gpu);
     });
