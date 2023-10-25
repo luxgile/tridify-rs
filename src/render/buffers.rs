@@ -5,15 +5,16 @@ use wgpu::{
     Buffer, BufferUsages,
 };
 
-use crate::{vertex, Color, GpuBuffer, GpuCtx, Rect, Transform, Vertex};
+use crate::{Color, GpuBuffer, GpuCtx, Rect, Transform, Vertex};
 
+pub struct Shape {
+    pub meshes: Vec<Mesh>,
+}
 pub struct Mesh {
-    pub vertices: Vec<Vertex>,
-    pub tris: Vec<u32>,
+    pub vertex_buffer: VertexBuffer,
 }
 
 impl Mesh {
-    pub fn new(vertices: Vec<Vertex>, tris: Vec<u32>) -> Self { Self { vertices, tris } }
 }
 
 pub struct InstanceBufferBuilder<T> {
@@ -94,13 +95,6 @@ impl<T: Pod> VertexBufferBuilder<T> {
 }
 
 impl VertexBufferBuilder<Vertex> {
-    pub fn add_mesh(&mut self, mesh: Mesh) -> &mut VertexBufferBuilder<Vertex> {
-        self.vertices.extend(&mesh.vertices);
-        self.indices.extend(&mesh.tris);
-        self.index_id_counter += mesh.vertices.len() as u32;
-        self
-    }
-
     ///Add a triangle to the batch specifying its 3 vertices
     pub fn add_triangle(&mut self, v: [Vertex; 3]) -> &mut VertexBufferBuilder<Vertex> {
         let index = self.index_id_counter;
@@ -127,14 +121,30 @@ impl VertexBufferBuilder<Vertex> {
         //Adding vertices
         let hw = w / 2.0;
         let hh = h / 2.0;
-        self.vertices
-            .push(vertex!(center.x - hw, center.y - hh, 0., color, [0.0, 0.0]));
-        self.vertices
-            .push(vertex!(center.x + hw, center.y - hh, 0., color, [1.0, 0.0]));
-        self.vertices
-            .push(vertex!(center.x - hw, center.y + hh, 0., color, [0.0, 1.0]));
-        self.vertices
-            .push(vertex!(center.x + hw, center.y + hh, 0., color, [1.0, 1.0]));
+        self.vertices.push(Vertex {
+            pos: [center.x - hw, center.y - hh, 0.],
+            color,
+            uv: [0.0, 0.0],
+            ..Default::default()
+        });
+        self.vertices.push(Vertex {
+            pos: [center.x + hw, center.y - hh, 0.],
+            color,
+            uv: [1.0, 0.0],
+            ..Default::default()
+        });
+        self.vertices.push(Vertex {
+            pos: [center.x - hw, center.y + hh, 0.],
+            color,
+            uv: [0.0, 1.0],
+            ..Default::default()
+        });
+        self.vertices.push(Vertex {
+            pos: [center.x + hw, center.y + hh, 0.],
+            color,
+            uv: [1.0, 1.0],
+            ..Default::default()
+        });
 
         //Adding indices
         let index = self.index_id_counter;
@@ -158,26 +168,30 @@ impl VertexBufferBuilder<Vertex> {
         let hw = w / 2.0;
         let hh = h / 2.0;
 
-        self.vertices.push(Vertex::from_vec(
-            center - right * hw - up * hh,
-            Some(color),
-            Some([0.0, 0.0]),
-        ));
-        self.vertices.push(Vertex::from_vec(
-            center + right * hw - up * hh,
-            Some(color),
-            Some([1.0, 0.0]),
-        ));
-        self.vertices.push(Vertex::from_vec(
-            center - right * hw + up * hh,
-            Some(color),
-            Some([0.0, 1.0]),
-        ));
-        self.vertices.push(Vertex::from_vec(
-            center + right * hw + up * hh,
-            Some(color),
-            Some([1.0, 1.0]),
-        ));
+        self.vertices.push(Vertex {
+            pos: (center - right * hw - up * hh).into(),
+            color,
+            uv: [0.0, 0.0],
+            ..Default::default()
+        });
+        self.vertices.push(Vertex {
+            pos: (center + right * hw - up * hh).into(),
+            color,
+            uv: [0.0, 0.0],
+            ..Default::default()
+        });
+        self.vertices.push(Vertex {
+            pos: (center - right * hw + up * hh).into(),
+            color,
+            uv: [0.0, 0.0],
+            ..Default::default()
+        });
+        self.vertices.push(Vertex {
+            pos: (center + right * hw + up * hh).into(),
+            color,
+            uv: [0.0, 0.0],
+            ..Default::default()
+        });
 
         //Adding indices
         let index = self.index_id_counter;
