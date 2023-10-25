@@ -106,7 +106,7 @@ impl Default for BrushDesc {
         Self {
             blend: BlendState {
                 color: ColorBlend::Default.into(),
-                    alpha: ColorBlend::Default.into()
+                alpha: ColorBlend::Default.into(),
             },
         }
     }
@@ -155,7 +155,10 @@ impl Brush {
         })
     }
 
-    pub fn set_input_layout(&mut self, layout: InputLayout) { self.input_layout = layout; }
+    pub fn set_input_layout(&mut self, layout: InputLayout) {
+        self.input_layout = layout;
+        self.needs_update = true;
+    }
 
     /// Bind asset given a group and location index. Both indices need to match with shader's or it
     /// will panic when baking and linking with rendering pipeline.
@@ -172,7 +175,9 @@ impl Brush {
     }
 
     /// Returns if brush has been modified and needs to update the GPU with new data.
-    pub fn needs_update(&self) -> bool { self.needs_update }
+    pub fn needs_update(&self) -> bool {
+        self.needs_update
+    }
 
     /// Update GPU bindings and pipelines with current brush data.
     pub fn update(&mut self, gpu: &GpuCtx) {
@@ -226,7 +231,11 @@ impl Brush {
         self.needs_update = false;
     }
 
-    pub fn get_pipeline(&self) -> &RenderPipeline { self.cached_pipeline.as_ref().unwrap() }
+    pub fn get_pipeline(&self) -> &RenderPipeline {
+        self.cached_pipeline.as_ref().unwrap()
+    }
 
-    pub fn get_bind_groups(&self) -> &Vec<(u32, BindGroup)> { &self.cached_bindings }
+    pub fn get_bind_groups(&self) -> &Vec<(u32, BindGroup)> {
+        &self.cached_bindings
+    }
 }

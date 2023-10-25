@@ -4,7 +4,14 @@ use bytemuck::{Pod, Zeroable};
 use glam::Vec3;
 use wgpu::{BufferAddress, VertexAttribute, VertexBufferLayout};
 
-use crate::core::Color;
+use crate::{
+    core::Color,
+    input_layout::{InputLayoutGroup, InputType},
+};
+
+pub trait VertexDataLayout {
+    fn get_layout() -> InputLayoutGroup;
+}
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Zeroable, Default)]
@@ -16,41 +23,14 @@ pub struct Vertex {
 }
 unsafe impl Pod for Vertex {}
 
-impl Vertex {
-    pub const DEFAULT_DESC: VertexBufferLayout<'static> = VertexBufferLayout {
-        array_stride: size_of::<Vertex>() as BufferAddress,
-        step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &[
-            VertexAttribute {
-                offset: 0,
-                shader_location: 0,
-                format: wgpu::VertexFormat::Float32x3,
-            },
-            VertexAttribute {
-                offset: size_of::<[f32; 3]>() as BufferAddress,
-                shader_location: 1,
-                format: wgpu::VertexFormat::Float32x4,
-            },
-            VertexAttribute {
-                offset: (size_of::<[f32; 3]>() + size_of::<Color>()) as BufferAddress,
-                shader_location: 2,
-                format: wgpu::VertexFormat::Float32x2,
-            },
-            VertexAttribute {
-                offset: (size_of::<[f32; 6]>() + size_of::<Color>()) as BufferAddress,
-                shader_location: 3,
-                format: wgpu::VertexFormat::Float32x3,
-            },
-        ],
-    };
-    #[must_use]
-    #[inline]
-    pub fn x(&self) -> f32 {
-        self.pos[0]
-    }
-    #[must_use]
-    #[inline]
-    pub fn y(&self) -> f32 {
-        self.pos[1]
+impl VertexDataLayout for Vertex {
+    fn get_layout() -> InputLayoutGroup {
+        let mut group = InputLayoutGroup::new_vertex();
+        group
+            .add_input(InputType::Vec3)
+            .add_input(InputType::Vec4)
+            .add_input(InputType::Vec2)
+            .add_input(InputType::Vec3);
+        group
     }
 }
