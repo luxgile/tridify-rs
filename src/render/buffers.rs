@@ -15,18 +15,10 @@ pub struct InstanceBufferBuilder<T> {
     data: Vec<T>,
 }
 impl<T> InstanceBufferBuilder<T> {
-    pub fn len(&self) -> usize {
-        self.data.len()
-    }
-    pub fn new() -> Self {
-        InstanceBufferBuilder { data: Vec::new() }
-    }
-    pub fn clear(&mut self) {
-        self.data.clear();
-    }
-    pub fn push_instance(&mut self, data: T) {
-        self.data.push(data);
-    }
+    pub fn len(&self) -> usize { self.data.len() }
+    pub fn new() -> Self { InstanceBufferBuilder { data: Vec::new() } }
+    pub fn clear(&mut self) { self.data.clear(); }
+    pub fn push_instance(&mut self, data: T) { self.data.push(data); }
 }
 impl<T: bytemuck::Pod> InstanceBufferBuilder<T> {
     pub fn bake(&self, gpu: &GpuCtx) -> InstanceBuffer {
@@ -43,9 +35,7 @@ impl<T: bytemuck::Pod> InstanceBufferBuilder<T> {
 }
 
 impl<T: bytemuck::Pod> Default for InstanceBufferBuilder<T> {
-    fn default() -> Self {
-        Self::new()
-    }
+    fn default() -> Self { Self::new() }
 }
 
 pub struct InstanceBuffer {
