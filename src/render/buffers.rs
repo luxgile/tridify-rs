@@ -181,19 +181,19 @@ impl VertexBufferBuilder<Vertex> {
         self.vertices.push(Vertex {
             pos: (center + right * hw - up * hh).into(),
             color,
-            uv: [0.0, 0.0],
+            uv: [1.0, 0.0],
             ..Default::default()
         });
         self.vertices.push(Vertex {
             pos: (center - right * hw + up * hh).into(),
             color,
-            uv: [0.0, 0.0],
+            uv: [0.0, 1.0],
             ..Default::default()
         });
         self.vertices.push(Vertex {
             pos: (center + right * hw + up * hh).into(),
             color,
-            uv: [0.0, 0.0],
+            uv: [1.0, 1.0],
             ..Default::default()
         });
 

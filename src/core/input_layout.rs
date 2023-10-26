@@ -77,24 +77,6 @@ impl InputLayoutGroup {
         }
     }
 
-    /// Returns a InputLayout with only a Vec3 on loc 0 for vertex position
-    pub fn new_vertex_minimal() -> InputLayoutGroup {
-        let mut group = Self::new_vertex();
-        group.add_input(InputType::Vec3);
-        group
-    }
-
-    /// Returns a InputLayout with Vec3 for position, Vec4 for color and Vec2 for uvs.
-    /// This is the default used when no InputLayout is specified.
-    pub fn new_vertex_standard() -> InputLayoutGroup {
-        let mut group = Self::new_vertex();
-        group
-            .add_input(InputType::Vec3)
-            .add_input(InputType::Vec4)
-            .add_input(InputType::Vec2);
-        group
-    }
-
     pub fn add_input(&mut self, input: InputType) -> &mut InputLayoutGroup {
         self.inputs.push(input);
         self
