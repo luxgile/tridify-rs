@@ -6,7 +6,9 @@ use tridify_rs::*;
 const OUTPUT_WIDTH: u32 = 1920;
 const OUTPUT_HEIGHT: u32 = 1080;
 
-pub fn main() -> Result<(), Box<dyn Error>> { pollster::block_on(run()) }
+pub fn main() -> Result<(), Box<dyn Error>> {
+    pollster::block_on(run())
+}
 
 async fn run() -> Result<(), Box<dyn Error>> {
     let app = Tridify::new();
@@ -35,7 +37,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
 
     let mut gpu_cmds = gpu_ctx.create_gpu_cmds();
     let mut render_pass = gpu_cmds.start_render_pass(RenderOptions::default());
-    render_pass.render_shapes(&gpu_ctx, &mut brush, &buffer, None);
+    render_pass.render_raw(&gpu_ctx, &mut brush, &buffer, None);
     render_pass.finish();
     if let OutputSurface::Headless(texture) = gpu_ctx.get_output() {
         gpu_cmds.texture_to_buffer(texture, &output_buffer);

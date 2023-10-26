@@ -136,19 +136,9 @@ impl<'a> RenderPass<'a> {
 
     //TODO: Change "ShapeBuffer" into "VertexInput"
     ///Draw batch on the canvas.
-    pub fn render_shapes(
-        &mut self, gpu: &GpuCtx, brush: &'a mut Brush, buffer: &'a VertexBuffer,
+    pub fn render_raw(
+        &mut self, brush: &'a mut Brush, vertex: &'a VertexBuffer,
         instance: Option<&'a InstanceBuffer>,
-    ) {
-        if brush.needs_update() {
-            brush.update(gpu);
-        }
-        self.render_shapes_cached(brush, buffer, instance);
-    }
-
-    /// Draw batch on canvas. Does not check if brush requires any changes.
-    pub fn render_shapes_cached(
-        &mut self, brush: &'a Brush, vertex: &'a VertexBuffer, instance: Option<&'a InstanceBuffer>,
     ) {
         let pipeline = brush.get_pipeline();
         self.pass.set_pipeline(pipeline);
@@ -177,6 +167,5 @@ impl<'a> RenderPass<'a> {
             .draw_indexed(0..vertex.index_len, 0, 0..instance_count);
     }
 
-    pub fn finish(self) {
-    }
+    pub fn finish(self) {}
 }

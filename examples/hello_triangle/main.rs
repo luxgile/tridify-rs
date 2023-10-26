@@ -32,7 +32,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
         //Build a render pass which will take care of the brush and shapes to draw them and binding it with the GPU.
         let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
-        render_pass.render_shapes(gpu, &mut brush, &buffer, None);
+        render_pass.render_raw(gpu, &mut brush, &buffer, None);
         render_pass.finish();
 
         //Execute all drawing commands from all render passes and render into screen.

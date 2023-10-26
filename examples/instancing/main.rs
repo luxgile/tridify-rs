@@ -63,7 +63,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         //Render frame as usual.
         let mut pass_builder = gpu.create_gpu_cmds();
         let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
-        render_pass.render_shapes(gpu, &mut brush, &vertex_buffer, Some(&instance_buffer));
+        render_pass.render_raw(gpu, &mut brush, &vertex_buffer, Some(&instance_buffer));
         render_pass.finish();
         pass_builder.complete(gpu);
     });

@@ -8,7 +8,7 @@ use wgpu::{
 
 use crate::{
     input_layout::{self, InputLayout, InputLayoutGroup},
-    Binder, GpuCtx, ToBinder, Vertex,
+    Binder, GpuCtx, ToBinder, Vertex, VertexDataLayout,
 };
 
 pub enum ColorBlend {
@@ -143,7 +143,7 @@ impl Brush {
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(shader_source.as_str())),
         });
         let mut input_layout = InputLayout::new();
-        input_layout.set_vertex_input(InputLayoutGroup::new_vertex_standard());
+        input_layout.set_vertex_input(Vertex::get_layout());
         Ok(Self {
             desc,
             compiled_shader: shader,

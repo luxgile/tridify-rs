@@ -14,10 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let gpu_ctx = window.ctx();
 
     //Load texture from path.
-    let texture = Texture::from_path(
-        gpu_ctx,
-        Path::new(r#"D:/Development/Rust Crates/LDrawy/examples/shading/texture.png"#),
-    );
+    let texture = Texture::from_path(gpu_ctx, Path::new(r#"examples/res/texture.png"#));
 
     //Sampler defines how the texture will be rendered in shapes.
     let sampler = Sampler::new_default(gpu_ctx);
@@ -40,6 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     cube_brush.bind(0, 0, camera_buf.clone());
     cube_brush.bind(1, 0, texture.clone());
     cube_brush.bind(1, 1, sampler.clone());
+    cube_brush.update(gpu_ctx);
 
     //Create and bake a shape batch with a cube in it.
     let cube_shape_buffer = VertexBufferBuilder::new()
@@ -59,6 +57,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     skybox_brush.bind(0, 0, camera_sky_buf.clone());
     skybox_brush.bind(1, 0, texture);
     skybox_brush.bind(1, 1, sampler);
+    skybox_brush.update(gpu_ctx);
     let skybox_shape_buffer = VertexBufferBuilder::new()
         .add_inv_cube(Vec3::ZERO, Quat::IDENTITY, Vec3::ONE, Color::WHITE)
         .build_buffers(gpu_ctx);
@@ -76,13 +75,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         camera.view.set_pos(Vec3::ZERO);
         let mvp = camera.build_camera_matrix() * model;
         camera_sky_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
-        render_pass.render_shapes(gpu, &mut skybox_brush, &skybox_shape_buffer, None);
+        render_pass.render_raw(&mut skybox_brush, &skybox_shape_buffer, None);
 
         //Render cube
         camera.view.set_pos(cached_pos);
         let mvp = camera.build_camera_matrix() * model;
         camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
-        render_pass.render_shapes(gpu, &mut cube_brush, &cube_shape_buffer, None);
+        render_pass.render_raw(&mut cube_brush, &cube_shape_buffer, None);
         render_pass.finish();
 
         pass_builder.complete(gpu);
