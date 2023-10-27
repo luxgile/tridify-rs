@@ -7,12 +7,12 @@ use wgpu::{
 use wgpu::{ImageCopyBuffer, ImageCopyTexture, Origin3d, TextureAspect};
 
 use crate::core::Color;
-use crate::OutputSurface;
 use crate::Rect;
 use crate::Texture;
 use crate::VertexBuffer;
 use crate::{GpuBuffer, InstanceBufferBuilder};
 use crate::{GpuCtx, InstanceBuffer};
+use crate::{OutputSurface, Painter, Shape};
 
 use super::Brush;
 
@@ -134,11 +134,13 @@ impl<'a> RenderPass<'a> {
         );
     }
 
-    //TODO: Change "ShapeBuffer" into "VertexInput"
+    pub fn render_shape(&mut self, painter: &'a impl Painter, shape: &'a impl Shape) {
+        self.render_raw(painter.get_brush(), shape.get_vertex_buffer(), None);
+    }
+
     ///Draw batch on the canvas.
     pub fn render_raw(
-        &mut self, brush: &'a mut Brush, vertex: &'a VertexBuffer,
-        instance: Option<&'a InstanceBuffer>,
+        &mut self, brush: &'a Brush, vertex: &'a VertexBuffer, instance: Option<&'a InstanceBuffer>,
     ) {
         let pipeline = brush.get_pipeline();
         self.pass.set_pipeline(pipeline);

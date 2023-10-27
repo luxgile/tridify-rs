@@ -3,6 +3,8 @@
 
 mod core;
 mod render;
+mod shapes;
 
 pub use crate::core::*;
 pub use render::*;
+pub use shapes::*;

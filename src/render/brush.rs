@@ -112,6 +112,10 @@ impl Default for BrushDesc {
     }
 }
 
+pub trait Painter {
+    fn get_brush(&self) -> &Brush;
+}
+
 ///Used to tell the GPU how to draw the shapes provided.
 pub struct Brush {
     desc: BrushDesc,

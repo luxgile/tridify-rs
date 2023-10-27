@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     //Setup the window render loop.
     window.set_render_loop(move |gpu, frame_ctx| {
-        let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32);
+        let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32 * 0.25);
         let cached_pos = camera.view.get_pos();
 
         //Render frame as usual.
