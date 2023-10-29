@@ -1,5 +1,5 @@
 use glam::{Mat4, Quat, Vec3};
-use tridify_rs::*;
+use tridify_rs::{palette::SkyboxPalette, *};
 
 use std::{error::Error, path::Path};
 
@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let gpu_ctx = window.ctx();
 
     //Load texture from path.
-    let texture = Texture::from_path(gpu_ctx, Path::new(r#"examples/res/texture.png"#));
+    let texture = Texture::from_path(gpu_ctx, Path::new("examples/res/texture.png"));
 
     //Sampler defines how the texture will be rendered in shapes.
     let sampler = Sampler::new_default(gpu_ctx);
@@ -23,7 +23,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         Transform::from_look_at(Vec3::NEG_Z * 10.0 + Vec3::Y * 10.0, Vec3::ZERO, Vec3::Y),
         Projection::default(),
     );
-    let mut camera_sky_buf = camera.build_buffer(gpu_ctx);
     let mut camera_buf = camera.build_buffer(gpu_ctx);
 
     //Create brush to draw the shapes.
@@ -49,18 +48,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .build_buffers(gpu_ctx);
 
-    let mut skybox_brush = Brush::from_source(
-        BrushDesc::default(),
-        gpu_ctx,
-        include_str!("skybox.wgsl").to_string(),
-    )?;
-    skybox_brush.bind(0, 0, camera_sky_buf.clone());
-    skybox_brush.bind(1, 0, texture);
-    skybox_brush.bind(1, 1, sampler);
-    skybox_brush.update(gpu_ctx);
-    let skybox_shape_buffer = VertexBufferBuilder::new()
-        .add_inv_cube(Vec3::ZERO, Quat::IDENTITY, Vec3::ONE, Color::WHITE)
-        .build_buffers(gpu_ctx);
+    let mut skybox_palette = SkyboxPalette::new(gpu_ctx);
+    skybox_palette.set_diffuse_texture(texture);
+    skybox_palette.check(gpu_ctx);
+    let skybox_shape = SkyboxShape::new(gpu_ctx);
 
     //Setup the window render loop.
     window.set_render_loop(move |gpu, frame_ctx| {
@@ -73,9 +64,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         //Render skybox
         camera.view.set_pos(Vec3::ZERO);
-        let mvp = camera.build_camera_matrix() * model;
-        camera_sky_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
-        render_pass.render_raw(&mut skybox_brush, &skybox_shape_buffer, None);
+        skybox_palette.update_camera(gpu, &camera);
+        render_pass.render_shape(&skybox_palette, &skybox_shape);
 
         //Render cube
         camera.view.set_pos(cached_pos);

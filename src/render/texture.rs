@@ -7,7 +7,7 @@ use wgpu::{
     TextureFormat, TextureUsages, TextureView, TextureViewDescriptor,
 };
 
-use crate::{GpuCtx, ToBinder};
+use crate::{Color, GpuCtx, ToBinder};
 
 bitflags::bitflags! {
     /// Specifies how the texture will be used for optimizations.
@@ -95,8 +95,8 @@ pub struct Texture {
 
 impl Texture {
     pub fn from_path(gpu: &GpuCtx, path: &Path) -> Self {
-        let image =
-            image::open(path).unwrap_or_else(|_| panic!("Error loading image at {:?}", path));
+        let image = image::open(path)
+            .unwrap_or_else(|e| panic!("Error loading image at {:?} - {}", path.canonicalize(), e));
         let desc = TextureDesc {
             size: TextureSize::D2(UVec2::new(image.width(), image.height())),
             usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
@@ -104,6 +104,17 @@ impl Texture {
         };
         let texture = Self::new(gpu, desc, None);
         texture.write_pixels(gpu, &image.to_rgba8());
+        texture
+    }
+
+    pub fn new_placerholder(gpu: &GpuCtx) -> Self {
+        let texture_desc = TextureDesc {
+            size: TextureSize::D2(UVec2::new(1, 1)),
+            usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
+            format: TextureFormat::Rgba8UnormSrgb,
+        };
+        let texture = Self::new(gpu, texture_desc, None);
+        texture.write_pixels(gpu, &Color::MAGENTA.to_rgba8());
         texture
     }
 

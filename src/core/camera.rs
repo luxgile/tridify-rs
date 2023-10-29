@@ -49,9 +49,9 @@ impl Camera {
 }
 
 impl ToGpuBuf for Camera {
-    fn build_buffer(&self, wnd: &GpuCtx) -> crate::GpuBuffer {
+    fn build_buffer(&self, gpu: &GpuCtx) -> crate::GpuBuffer {
         GpuBuffer::init(
-            wnd,
+            gpu,
             bytemuck::cast_slice(&self.build_camera_matrix().to_cols_array()),
             wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         )

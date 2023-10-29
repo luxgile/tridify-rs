@@ -39,6 +39,7 @@ impl Color {
     pub const WHITE: Color = Color::new(1.0, 1.0, 1.0, 1.0);
     pub const MAROON: Color = Color::new(0.5, 0.0, 0.0, 1.0);
     pub const RED: Color = Color::new(1.0, 0.0, 0.0, 1.0);
+    pub const MAGENTA: Color = Color::new(1.0, 0.0, 1.0, 1.0);
     pub const PURPLE: Color = Color::new(0.5, 0.0, 0.5, 1.0);
     pub const GREEN: Color = Color::new(0.0, 0.5, 0.0, 1.0);
     pub const LIME: Color = Color::new(0.0, 1.0, 0.0, 1.0);

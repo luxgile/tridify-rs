@@ -7,6 +7,7 @@ mod egui;
 
 mod gpu_buffer;
 mod gpuctx;
+pub mod palette;
 mod render_pass;
 mod sampler;
 mod texture;

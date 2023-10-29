@@ -6,13 +6,12 @@ pub trait Shape {
     fn get_vertex_buffer(&self) -> &VertexBuffer;
 }
 
-pub struct Skybox {
+pub struct SkyboxShape {
     vertex: VertexBuffer,
     pub light_dir: Vec3,
-    pub diffuse: Option<Texture>,
 }
 
-impl Skybox {
+impl SkyboxShape {
     pub fn new(gpu: &GpuCtx) -> Self {
         let vertex = VertexBufferBuilder::new()
             .add_inv_cube(Vec3::ZERO, Quat::IDENTITY, Vec3::ONE, Color::WHITE)
@@ -20,13 +19,10 @@ impl Skybox {
         Self {
             vertex,
             light_dir: Vec3::NEG_Y,
-            diffuse: None,
         }
     }
 }
 
-impl Shape for Skybox {
-    fn get_vertex_buffer(&self) -> &VertexBuffer {
-        &self.vertex
-    }
+impl Shape for SkyboxShape {
+    fn get_vertex_buffer(&self) -> &VertexBuffer { &self.vertex }
 }

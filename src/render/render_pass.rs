@@ -169,5 +169,6 @@ impl<'a> RenderPass<'a> {
             .draw_indexed(0..vertex.index_len, 0, 0..instance_count);
     }
 
-    pub fn finish(self) {}
+    pub fn finish(self) {
+    }
 }

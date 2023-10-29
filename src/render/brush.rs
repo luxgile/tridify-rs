@@ -130,18 +130,18 @@ pub struct Brush {
 impl Brush {
     /// Create brush from shader path.
     pub fn from_path(
-        desc: BrushDesc, wnd: &GpuCtx, shader_path: &Path,
+        desc: BrushDesc, gpu: &GpuCtx, shader_path: &Path,
     ) -> Result<Self, Box<dyn Error>> {
         let mut source = String::new();
         File::open(shader_path)?.read_to_string(&mut source)?;
-        Self::from_source(desc, wnd, source)
+        Self::from_source(desc, gpu, source)
     }
 
     /// Create brush directly providing the shader source.
     pub fn from_source(
-        desc: BrushDesc, wnd: &GpuCtx, shader_source: String,
+        desc: BrushDesc, gpu: &GpuCtx, shader_source: String,
     ) -> Result<Self, Box<dyn Error>> {
-        let device = &wnd.device;
+        let device = &gpu.device;
         let shader = device.create_shader_module(ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(shader_source.as_str())),
@@ -164,6 +164,11 @@ impl Brush {
         self.needs_update = true;
     }
 
+    pub fn clear_bindings(&mut self) {
+        self.assets_to_bind.clear();
+        self.needs_update = true;
+    }
+
     /// Bind asset given a group and location index. Both indices need to match with shader's or it
     /// will panic when baking and linking with rendering pipeline.
     pub fn bind(&mut self, group_index: u32, loc_index: u32, asset: impl ToBinder + 'static) {
@@ -179,9 +184,7 @@ impl Brush {
     }
 
     /// Returns if brush has been modified and needs to update the GPU with new data.
-    pub fn needs_update(&self) -> bool {
-        self.needs_update
-    }
+    pub fn needs_update(&self) -> bool { self.needs_update }
 
     /// Update GPU bindings and pipelines with current brush data.
     pub fn update(&mut self, gpu: &GpuCtx) {
@@ -235,11 +238,7 @@ impl Brush {
         self.needs_update = false;
     }
 
-    pub fn get_pipeline(&self) -> &RenderPipeline {
-        self.cached_pipeline.as_ref().unwrap()
-    }
+    pub fn get_pipeline(&self) -> &RenderPipeline { self.cached_pipeline.as_ref().unwrap() }
 
-    pub fn get_bind_groups(&self) -> &Vec<(u32, BindGroup)> {
-        &self.cached_bindings
-    }
+    pub fn get_bind_groups(&self) -> &Vec<(u32, BindGroup)> { &self.cached_bindings }
 }
