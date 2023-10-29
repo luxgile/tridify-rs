@@ -142,6 +142,10 @@ impl<'a> RenderPass<'a> {
     pub fn render_raw(
         &mut self, brush: &'a Brush, vertex: &'a VertexBuffer, instance: Option<&'a InstanceBuffer>,
     ) {
+        if brush.needs_update() {
+            println!("WARNING: Brush with changes is not being saved before being used. Make sure to call 'update' beforehand.");
+        }
+
         let pipeline = brush.get_pipeline();
         self.pass.set_pipeline(pipeline);
         let bind_groups = brush.get_bind_groups();

@@ -6,12 +6,8 @@ use wgpu::{BufferAddress, VertexAttribute, VertexBufferLayout};
 
 use crate::{
     core::Color,
-    input_layout::{InputLayoutGroup, InputType},
+    input_layout::{GpuDataLayout, InputLayoutGroup, InputType},
 };
-
-pub trait VertexDataLayout {
-    fn get_layout() -> InputLayoutGroup;
-}
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Zeroable, Default)]
@@ -21,9 +17,25 @@ pub struct Vertex {
     pub uv: [f32; 2],
     pub normal: [f32; 3],
 }
-unsafe impl Pod for Vertex {}
+unsafe impl Pod for Vertex {
+}
 
-impl VertexDataLayout for Vertex {
+impl Vertex {
+    pub fn from_xyz(x: f32, y: f32, z: f32) -> Self {
+        Self {
+            pos: [x, y, z],
+            ..Default::default()
+        }
+    }
+    pub fn from_vec(pos: Vec3) -> Self {
+        Self {
+            pos: pos.to_array(),
+            ..Default::default()
+        }
+    }
+}
+
+impl GpuDataLayout for Vertex {
     fn get_layout() -> InputLayoutGroup {
         let mut group = InputLayoutGroup::new_vertex();
         group

@@ -1,5 +1,7 @@
 use glam::{Affine3A, Mat4, Quat, Vec3};
 
+use crate::input_layout::{GpuDataLayout, InputLayoutGroup, InputType};
+
 /// Representation for position, rotation and scale.
 #[derive(Clone, Copy)]
 pub struct Transform {
@@ -37,4 +39,15 @@ impl Transform {
 }
 impl Default for Transform {
     fn default() -> Self { Transform::new(Vec3::ZERO, Quat::IDENTITY, Vec3::ONE) }
+}
+impl GpuDataLayout for Transform {
+    fn get_layout() -> crate::input_layout::InputLayoutGroup {
+        let mut instance_layout_group = InputLayoutGroup::new_instance();
+        instance_layout_group
+            .add_input(InputType::Vec4)
+            .add_input(InputType::Vec4)
+            .add_input(InputType::Vec4)
+            .add_input(InputType::Vec4);
+        instance_layout_group
+    }
 }

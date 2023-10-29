@@ -6,9 +6,7 @@ use tridify_rs::*;
 const OUTPUT_WIDTH: u32 = 1920;
 const OUTPUT_HEIGHT: u32 = 1080;
 
-pub fn main() -> Result<(), Box<dyn Error>> {
-    pollster::block_on(run())
-}
+pub fn main() -> Result<(), Box<dyn Error>> { pollster::block_on(run()) }
 
 async fn run() -> Result<(), Box<dyn Error>> {
     let app = Tridify::new();
@@ -29,15 +27,15 @@ async fn run() -> Result<(), Box<dyn Error>> {
     //Create a shape batch, add a triangle to it and create a GPU buffer with mesh data.
     let buffer = VertexBufferBuilder::new()
         .add_triangle([
-            vertex!(-0.5, -0.5, 0.0, Color::SILVER),
-            vertex!(0.5, -0.5, 0.0, Color::SILVER),
-            vertex!(0.0, 0.5, 0.0, Color::SILVER),
+            Vertex::from_xyz(-0.5, -0.5, 0.0),
+            Vertex::from_xyz(0.5, -0.5, 0.0),
+            Vertex::from_xyz(0.0, 0.5, 0.0),
         ])
         .build_buffers(&gpu_ctx);
 
     let mut gpu_cmds = gpu_ctx.create_gpu_cmds();
     let mut render_pass = gpu_cmds.start_render_pass(RenderOptions::default());
-    render_pass.render_raw(&gpu_ctx, &mut brush, &buffer, None);
+    render_pass.render_raw(&mut brush, &buffer, None);
     render_pass.finish();
     if let OutputSurface::Headless(texture) = gpu_ctx.get_output() {
         gpu_cmds.texture_to_buffer(texture, &output_buffer);

@@ -2,7 +2,7 @@ use std::{error::Error, path::Path};
 
 use glam::{Mat4, Quat, Vec3};
 use tridify_rs::{
-    input_layout::{InputLayout, InputLayoutGroup, InputType},
+    input_layout::{GpuDataLayout, InputLayout, InputLayoutGroup, InputType},
     *,
 };
 
@@ -11,7 +11,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let window = app.create_window()?;
     let gpu_ctx = window.ctx();
 
-    let texture = Texture::from_path(gpu_ctx, Path::new(r#"examples/instancing/texture.png"#));
+    let texture = Texture::from_path(gpu_ctx, Path::new(r#"examples/res/texture.png"#));
     let sampler = Sampler::new_default(gpu_ctx);
 
     let camera = Camera::new(
@@ -31,15 +31,10 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     //We need to modify the standard input layout to include our instance data.
     //In this case to include a Matrix4x4 we need to add four times a Vec4.
     let mut input_layout = InputLayout::new();
-    input_layout.set_vertex_input(InputLayoutGroup::new_vertex_standard());
-    let mut instance_layout = InputLayoutGroup::new_instance();
-    instance_layout
-        .add_input(InputType::Vec4)
-        .add_input(InputType::Vec4)
-        .add_input(InputType::Vec4)
-        .add_input(InputType::Vec4);
-    input_layout.set_instance_input(instance_layout);
+    input_layout.set_vertex_input(Vertex::get_layout());
+    input_layout.set_instance_input(Transform::get_layout());
     brush.set_input_layout(input_layout);
+    brush.update(gpu_ctx);
 
     //Create and bake a shape batch with a cube in it.
     let vertex_buffer = VertexBufferBuilder::new()
@@ -63,7 +58,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         //Render frame as usual.
         let mut pass_builder = gpu.create_gpu_cmds();
         let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
-        render_pass.render_raw(gpu, &mut brush, &vertex_buffer, Some(&instance_buffer));
+        render_pass.render_raw(&mut brush, &vertex_buffer, Some(&instance_buffer));
         render_pass.finish();
         pass_builder.complete(gpu);
     });

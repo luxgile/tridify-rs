@@ -16,25 +16,14 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         gpu_ctx,
         include_str!("shader.wgsl").to_string(),
     )?;
+    brush.update(gpu_ctx);
 
     //Create a shape batch, add a triangle to it and create a GPU buffer with mesh data.
     let buffer = VertexBufferBuilder::new()
         .add_triangle([
-            Vertex {
-                pos: [-0.5, -0.5, 0.0],
-                color: Color::SILVER,
-                ..Default::default()
-            },
-            Vertex {
-                pos: [0.5, -0.5, 0.0],
-                color: Color::SILVER,
-                ..Default::default()
-            },
-            Vertex {
-                pos: [0.0, 0.5, 0.0],
-                color: Color::SILVER,
-                ..Default::default()
-            },
+            Vertex::from_xyz(-0.5, -0.5, 0.0),
+            Vertex::from_xyz(0.5, -0.5, 0.0),
+            Vertex::from_xyz(0.0, 0.5, 0.0),
         ])
         .build_buffers(gpu_ctx);
 

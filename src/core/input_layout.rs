@@ -5,6 +5,10 @@
 
 use wgpu::{VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
 
+pub trait GpuDataLayout {
+    fn get_layout() -> InputLayoutGroup;
+}
+
 pub struct InputLayout {
     pub vertex: Option<InputLayoutGroup>,
     pub instance: Option<InputLayoutGroup>,
@@ -17,24 +21,18 @@ impl InputLayout {
         }
     }
 
-    pub fn set_vertex_input(&mut self, input: InputLayoutGroup) {
-        assert!(InputLayoutGroupType::Vertex == input.ty);
-        self.vertex = Some(input);
-    }
+    pub fn set_vertex_input(&mut self, input: InputLayoutGroup) { self.vertex = Some(input); }
 
-    pub fn set_instance_input(&mut self, input: InputLayoutGroup) {
-        assert!(input.ty == InputLayoutGroupType::Instance);
-        self.instance = Some(input);
-    }
+    pub fn set_instance_input(&mut self, input: InputLayoutGroup) { self.instance = Some(input); }
 
     pub fn bake(&mut self) -> Vec<VertexBufferLayout> {
         let mut baked_groups = Vec::new();
         let mut start_loc = 0;
         if let Some(input) = &mut self.vertex {
-            baked_groups.push(input.bake_layout(&mut start_loc));
+            baked_groups.push(input.bake_layout(InputLayoutGroupType::Vertex, &mut start_loc));
         }
         if let Some(input) = &mut self.instance {
-            baked_groups.push(input.bake_layout(&mut start_loc));
+            baked_groups.push(input.bake_layout(InputLayoutGroupType::Instance, &mut start_loc));
         }
         baked_groups
     }
@@ -55,7 +53,6 @@ impl InputLayoutGroupType {
 }
 
 pub struct InputLayoutGroup {
-    ty: InputLayoutGroupType,
     inputs: Vec<InputType>,
     cached_attributes: Vec<VertexAttribute>,
 }
@@ -63,7 +60,6 @@ pub struct InputLayoutGroup {
 impl InputLayoutGroup {
     pub fn new_vertex() -> Self {
         Self {
-            ty: InputLayoutGroupType::Vertex,
             inputs: Vec::new(),
             cached_attributes: Vec::new(),
         }
@@ -71,7 +67,6 @@ impl InputLayoutGroup {
 
     pub fn new_instance() -> Self {
         Self {
-            ty: InputLayoutGroupType::Instance,
             inputs: Vec::new(),
             cached_attributes: Vec::new(),
         }
@@ -81,7 +76,9 @@ impl InputLayoutGroup {
         self.inputs.push(input);
         self
     }
-    fn bake_layout(&mut self, start_loc: &mut u32) -> VertexBufferLayout<'_> {
+    fn bake_layout(
+        &mut self, ty: InputLayoutGroupType, start_loc: &mut u32,
+    ) -> VertexBufferLayout<'_> {
         let index = start_loc;
         let mut offset = 0;
         self.cached_attributes.clear();
@@ -98,7 +95,7 @@ impl InputLayoutGroup {
 
         VertexBufferLayout {
             array_stride: offset,
-            step_mode: self.ty.get_step_mode(),
+            step_mode: ty.get_step_mode(),
             attributes: &self.cached_attributes,
         }
     }
