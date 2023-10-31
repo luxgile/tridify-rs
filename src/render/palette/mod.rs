@@ -1,5 +1,6 @@
 use std::mem::size_of;
 
+use glam::Vec3;
 use wgpu::BufferUsages;
 
 use crate::{
@@ -46,6 +47,8 @@ impl SkyboxPalette {
     }
 
     pub fn update_camera(&mut self, gpu: &GpuCtx, camera: &Camera) {
+        let mut camera = camera.clone();
+        camera.view.set_pos(Vec3::ZERO);
         let mvp = camera.build_camera_matrix();
         self.camera_view
             .write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
@@ -53,11 +56,15 @@ impl SkyboxPalette {
 }
 
 impl Painter for SkyboxPalette {
-    fn get_brush(&self) -> &Brush { &self.brush }
+    fn get_brush(&self) -> &Brush {
+        &self.brush
+    }
 }
 
 impl Asset for SkyboxPalette {
-    fn needs_update(&self) -> bool { self.needs_update }
+    fn needs_update(&self) -> bool {
+        self.needs_update
+    }
     fn update(&mut self, gpu: &GpuCtx) {
         self.brush.clear_bindings();
         self.brush.bind(0, 0, self.camera_view.clone());

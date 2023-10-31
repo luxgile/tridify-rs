@@ -55,20 +55,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     //Setup the window render loop.
     window.set_render_loop(move |gpu, frame_ctx| {
-        let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32 * 0.25);
-        let cached_pos = camera.view.get_pos();
-
         //Render frame as usual.
         let mut pass_builder = gpu.create_gpu_cmds();
         let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
 
         //Render skybox
-        camera.view.set_pos(Vec3::ZERO);
         skybox_palette.update_camera(gpu, &camera);
         render_pass.render_shape(&skybox_palette, &skybox_shape);
 
         //Render cube
-        camera.view.set_pos(cached_pos);
+        let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32 * 0.25);
         let mvp = camera.build_camera_matrix() * model;
         camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
         render_pass.render_raw(&mut cube_brush, &cube_shape_buffer, None);
