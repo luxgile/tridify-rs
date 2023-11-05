@@ -141,11 +141,6 @@ impl<'a> RenderPass<'a> {
         }
     }
 
-    ///Render using painter and shapes as inputs.
-    pub fn render_shape(&mut self, painter: &'a impl Painter, shape: &'a impl Shape) {
-        self.render_raw(painter.get_brush(), shape.get_vbuffer(), None);
-    }
-
     ///Render using raw buffers as inputs.
     pub fn render_raw(
         &mut self, brush: &'a Brush, vertex: &'a VertexBuffer, instance: Option<&'a InstanceBuffer>,

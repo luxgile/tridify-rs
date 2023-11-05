@@ -107,6 +107,17 @@ impl Texture {
         texture
     }
 
+    pub fn new_white(gpu: &GpuCtx) -> Self {
+        let texture_desc = TextureDesc {
+            size: TextureSize::D2(UVec2::new(1, 1)),
+            usage: TextureUsage::TEXTURE_BIND | TextureUsage::DESTINATION,
+            format: TextureFormat::Rgba8UnormSrgb,
+        };
+        let texture = Self::new(gpu, texture_desc, None);
+        texture.write_pixels(gpu, &Color::WHITE.to_rgba8());
+        texture
+    }
+
     pub fn new_placerholder(gpu: &GpuCtx) -> Self {
         let texture_desc = TextureDesc {
             size: TextureSize::D2(UVec2::new(1, 1)),

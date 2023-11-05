@@ -1,4 +1,4 @@
-use glam::{Affine3A, Mat4, Quat, Vec3};
+use glam::{Affine3A, Mat3, Mat3A, Mat4, Quat, Vec3};
 
 use crate::input_layout::{GpuDataLayout, InputLayoutGroup, InputType};
 
@@ -17,6 +17,26 @@ impl Transform {
 
     pub fn get_pos(&self) -> Vec3 { self.affine.translation.into() }
     pub fn set_pos(&mut self, pos: Vec3) { self.affine.translation = pos.into() }
+
+    //FIXME: Not very optimal
+    pub fn get_rot(&self) -> Quat { self.affine.to_scale_rotation_translation().1 }
+    pub fn set_rot(&mut self, rot: Quat) {
+        let (s, r, t) = self.affine.to_scale_rotation_translation();
+        self.affine = Affine3A::from_scale_rotation_translation(s, rot, t);
+    }
+
+    //FIXME: Not very optimal
+    pub fn get_scale(&self) -> Vec3 { self.affine.to_scale_rotation_translation().0 }
+    pub fn set_scale(&mut self, scale: Vec3) {
+        let (s, r, t) = self.affine.to_scale_rotation_translation();
+        self.affine = Affine3A::from_scale_rotation_translation(scale, r, t);
+    }
+
+    //TODO: Test if this actually works
+    pub fn rotate(&mut self, rotation: Quat) {
+        let rot_matrix = Mat3A::from_quat(rotation);
+        self.affine.matrix3 *= rot_matrix;
+    }
 
     /// Create transform based only on position. Rotation and scale will have default values.
     pub fn from_pos(position: Vec3) -> Self { Transform::new(position, Quat::IDENTITY, Vec3::ONE) }

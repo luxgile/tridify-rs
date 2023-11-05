@@ -3,6 +3,8 @@ use tridify_rs::*;
 
 use std::{error::Error, path::Path};
 
+const ROTATION_SPEED: f32 = 180.0;
+
 fn main() -> Result<(), Box<dyn Error>> {
     //Create app and main window.
     let mut app = Tridify::new();
@@ -23,30 +25,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         Transform::from_look_at(Vec3::NEG_Z * 10.0 + Vec3::Y * 10.0, Vec3::ZERO, Vec3::Y),
         Projection::default(),
     );
-    let mut camera_buf = camera.build_buffer(gpu_ctx);
-
-    //Create brush to draw the shapes.
-    let mut cube_brush = Brush::from_source(
-        BrushDesc::new(ColorBlend::Default, AlphaBlend::Default),
-        gpu_ctx,
-        include_str!("shader.wgsl").to_string(),
-    )?;
-    //Bind camera, sampler and texture to the brush. Make sure group_index and loc_index are the same as
-    //in the shader.
-    cube_brush.bind(0, 0, camera_buf.clone());
-    cube_brush.bind(1, 0, texture.clone());
-    cube_brush.bind(1, 1, sampler.clone());
-    cube_brush.update(gpu_ctx);
 
     //Create and bake a shape batch with a cube in it.
-    let cube_shape_buffer = VertexBufferBuilder::new()
-        .add_cube(
-            Vec3::ZERO,
-            Quat::from_rotation_x(35.) * Quat::from_rotation_y(35.),
-            Vec3::ONE * 5.,
-            Color::WHITE,
-        )
-        .build_buffers(gpu_ctx);
+    let mut model = PbrModel::from_path(gpu_ctx, Path::new("examples/res/sphere.obj"));
+    model.transform.set_scale(Vec3::ONE * 3.0);
+    model.get_main_palette().set_diffuse(texture.clone());
+    model.check(gpu_ctx);
 
     let mut skybox = Skybox::new(gpu_ctx);
     skybox.palette.set_diffuse_texture(texture);
@@ -63,10 +47,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         render_pass.render(&skybox);
 
         //Render cube
-        let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32 * 0.25);
-        let mvp = camera.build_camera_matrix() * model;
-        camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
-        render_pass.render_raw(&mut cube_brush, &cube_shape_buffer, None);
+        model.transform.rotate(Quat::from_rotation_z(
+            ROTATION_SPEED * frame_ctx.delta_time as f32,
+        ));
+        model.update_camera(gpu, &camera);
+        render_pass.render(&model);
+        // let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32 * 0.25);
+        // let mvp = camera.build_camera_matrix() * model;
+        // camera_buf.write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
+        // render_pass.render_raw(&mut cube_brush, &cube_shape_buffer, None);
         render_pass.finish();
 
         pass_builder.complete(gpu);
