@@ -1,5 +1,5 @@
 use glam::{Mat4, Quat, Vec3};
-use tridify_rs::{palette::SkyboxPalette, *};
+use tridify_rs::*;
 
 use std::{error::Error, path::Path};
 
@@ -48,10 +48,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .build_buffers(gpu_ctx);
 
-    let mut skybox_palette = SkyboxPalette::new(gpu_ctx);
-    skybox_palette.set_diffuse_texture(texture);
-    skybox_palette.check(gpu_ctx);
-    let skybox_shape = SkyboxShape::new(gpu_ctx);
+    let mut skybox = Skybox::new(gpu_ctx);
+    skybox.palette.set_diffuse_texture(texture);
+    skybox.palette.check(gpu_ctx);
 
     //Setup the window render loop.
     window.set_render_loop(move |gpu, frame_ctx| {
@@ -60,8 +59,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
 
         //Render skybox
-        skybox_palette.update_camera(gpu, &camera);
-        render_pass.render_shape(&skybox_palette, &skybox_shape);
+        skybox.palette.update_camera(gpu, &camera);
+        render_pass.render(&skybox);
 
         //Render cube
         let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32 * 0.25);

@@ -8,7 +8,7 @@ use wgpu::{
 
 use crate::{
     input_layout::{self, GpuDataLayout, InputLayout, InputLayoutGroup},
-    Binder, GpuCtx, ToBinder, Vertex,
+    Binder, GpuCtx, Shape, ToBinder, Vertex,
 };
 
 pub enum ColorBlend {
@@ -110,10 +110,6 @@ impl Default for BrushDesc {
             },
         }
     }
-}
-
-pub trait Painter {
-    fn get_brush(&self) -> &Brush;
 }
 
 ///Used to tell the GPU how to draw the shapes provided.

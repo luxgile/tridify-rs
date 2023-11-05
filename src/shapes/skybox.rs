@@ -1,13 +1,33 @@
+use std::mem::size_of;
+
 use glam::{Quat, Vec3};
+use wgpu::BufferUsages;
 
 use crate::{
-    palette::SkyboxPalette, Brush, BrushDesc, Color, GpuBuffer, GpuCtx, Sampler, Shape, Texture,
-    VertexBuffer, VertexBufferBuilder,
+    Asset, Brush, BrushDesc, Camera, Color, GpuBuffer, GpuCtx, Painter, Palette, Renderable,
+    Sampler, Shape, Texture, Transform, VertexBuffer, VertexBufferBuilder,
 };
 
 pub struct Skybox {
-    shape: SkyboxShape,
-    palette: SkyboxPalette,
+    pub shape: SkyboxShape,
+    pub palette: SkyboxPalette,
+}
+
+impl Skybox {
+    pub fn new(gpu: &GpuCtx) -> Self {
+        let shape = SkyboxShape::new(gpu);
+        let palette = SkyboxPalette::new(gpu);
+        Self { shape, palette }
+    }
+}
+
+impl Renderable for Skybox {
+    fn get_shape_pal_pair(&self, index: usize) -> Option<(&dyn Shape, &dyn crate::Palette)> {
+        if index != 0 {
+            return None;
+        }
+        Some((&self.shape, &self.palette))
+    }
 }
 
 pub struct SkyboxShape {
@@ -24,7 +44,7 @@ impl SkyboxShape {
 }
 
 impl Shape for SkyboxShape {
-    fn get_vbuffers(&self) -> Vec<&VertexBuffer> { vec![&self.vertex] }
+    fn get_vbuffer(&self) -> &VertexBuffer { &self.vertex }
 }
 
 pub struct SkyboxPalette {
@@ -71,6 +91,9 @@ impl SkyboxPalette {
         self.camera_view
             .write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));
     }
+}
+
+impl Palette for SkyboxPalette {
 }
 
 impl Painter for SkyboxPalette {

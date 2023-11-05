@@ -7,12 +7,12 @@ use wgpu::{
 use wgpu::{ImageCopyBuffer, ImageCopyTexture, Origin3d, TextureAspect};
 
 use crate::core::Color;
-use crate::Rect;
 use crate::Texture;
 use crate::VertexBuffer;
 use crate::{GpuBuffer, InstanceBufferBuilder};
 use crate::{GpuCtx, InstanceBuffer};
 use crate::{OutputSurface, Painter, Shape};
+use crate::{Rect, Renderable};
 
 use super::Brush;
 
@@ -134,11 +134,19 @@ impl<'a> RenderPass<'a> {
         );
     }
 
-    pub fn render_shape(&mut self, painter: &'a impl Painter, shape: &'a impl Shape) {
-        self.render_raw(painter.get_brush(), shape.get_vertex_buffer(), None);
+    ///Simplified render function for high-level inputs.
+    pub fn render(&mut self, renderable: &'a impl Renderable) {
+        for (shape, painter) in renderable.iter_pairs() {
+            self.render_raw(painter.get_brush(), shape.get_vbuffer(), None);
+        }
     }
 
-    ///Draw batch on the canvas.
+    ///Render using painter and shapes as inputs.
+    pub fn render_shape(&mut self, painter: &'a impl Painter, shape: &'a impl Shape) {
+        self.render_raw(painter.get_brush(), shape.get_vbuffer(), None);
+    }
+
+    ///Render using raw buffers as inputs.
     pub fn render_raw(
         &mut self, brush: &'a Brush, vertex: &'a VertexBuffer, instance: Option<&'a InstanceBuffer>,
     ) {
