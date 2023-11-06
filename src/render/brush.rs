@@ -7,8 +7,7 @@ use wgpu::{
 };
 
 use crate::{
-    input_layout::{self, GpuDataLayout, InputLayout, InputLayoutGroup},
-    Binder, GpuCtx, Shape, ToBinder, Vertex,
+    Binder, GpuCtx, Shape, ToBinder, Vertex, {GpuDataLayout, InputLayout, InputLayoutGroup},
 };
 
 pub enum ColorBlend {

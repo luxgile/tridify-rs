@@ -1,5 +1,6 @@
 use glam::{Mat4, Quat, Vec3};
 use tridify_rs::*;
+use winit::event::ScanCode;
 
 use std::{error::Error, path::Path};
 
@@ -41,6 +42,20 @@ fn main() -> Result<(), Box<dyn Error>> {
         //Render frame as usual.
         let mut pass_builder = gpu.create_gpu_cmds();
         let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
+
+        for key in frame_ctx.input.keyboard.virtual_keys() {
+            match key {
+                winit::event::VirtualKeyCode::S => camera.view.local_translate(Vec3::Z),
+                winit::event::VirtualKeyCode::W => camera.view.local_translate(-Vec3::Z),
+                winit::event::VirtualKeyCode::A => camera.view.local_translate(Vec3::X),
+                winit::event::VirtualKeyCode::D => camera.view.local_translate(-Vec3::X),
+                winit::event::VirtualKeyCode::Q => camera.view.translate(Vec3::Y),
+                winit::event::VirtualKeyCode::E => camera.view.translate(-Vec3::Y),
+                winit::event::VirtualKeyCode::J => camera.view.rotate(Quat::from_rotation_y(0.1)),
+                winit::event::VirtualKeyCode::L => camera.view.rotate(Quat::from_rotation_y(-0.1)),
+                _ => {}
+            }
+        }
 
         //Render skybox
         skybox.palette.update_camera(gpu, &camera);

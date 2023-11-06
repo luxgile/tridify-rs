@@ -12,14 +12,14 @@ use winit::{
     window::WindowId,
 };
 
-use crate::{GpuCtx, TextureDesc, TextureSize, Window};
+use crate::{GpuCtx, Input, TextureDesc, TextureSize, Window};
 
 pub struct FrameContext<'a> {
     //event loop
     // pub user_ctx: &'a T,
     pub delta_time: f64,
     pub elapsed_time: f64,
-    pub winit_event: &'a Event<'a, ()>,
+    pub input: Input,
     pub eloop: &'a EventLoopWindowTarget<()>,
 }
 
@@ -92,56 +92,62 @@ impl Tridify {
     /// can't never return.
     pub fn start<T: 'static>(mut self, _user_ctx: T) -> ! {
         let event_loop = self.wb.take().unwrap();
-        event_loop.run(move |event, eloop, flow| match event {
-            Event::WindowEvent {
-                event: ref wnd_event,
-                window_id,
-            } => {
-                //Update egui if initilaized
-                #[cfg(feature = "egui")]
-                if let Ok(wnd) = self.get_window_mut(&window_id) {
-                    if let Some(egui) = wnd.ctx.egui.as_mut() {
-                        egui.event(&event);
-                    }
-                }
-
-                match wnd_event {
-                    WindowEvent::CloseRequested => {
-                        self.destroy_window(&window_id);
-                        if !self.has_windows() {
-                            *flow = ControlFlow::Exit;
+        let mut input = Input::default();
+        event_loop.run(move |event, eloop, flow| {
+            input.process_event(&event);
+            match event {
+                Event::WindowEvent {
+                    event: ref wnd_event,
+                    window_id,
+                } => {
+                    //Update egui if initilaized
+                    #[cfg(feature = "egui")]
+                    if let Ok(wnd) = self.get_window_mut(&window_id) {
+                        if let Some(egui) = wnd.ctx.egui.as_mut() {
+                            egui.event(&event);
                         }
                     }
-                    WindowEvent::Resized(size) => {
-                        let wnd = self.get_window_mut(&window_id).unwrap();
-                        wnd.ctx
-                            .set_output_surface_size(UVec2::new(size.width, size.height))
+
+                    match wnd_event {
+                        WindowEvent::CloseRequested => {
+                            self.destroy_window(&window_id);
+                            if !self.has_windows() {
+                                *flow = ControlFlow::Exit;
+                            }
+                        }
+                        WindowEvent::Resized(size) => {
+                            let wnd = self.get_window_mut(&window_id).unwrap();
+                            wnd.ctx
+                                .set_output_surface_size(UVec2::new(size.width, size.height))
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
-            }
-            Event::MainEventsCleared => {
-                for (_, wnd) in self.windows.iter_mut() {
-                    //TODO: User configurable
-                    if wnd.ctx().last_draw_time.elapsed() >= Duration::from_millis(16.6 as u64) {
-                        wnd.view_mut().redraw();
-                        wnd.view_mut().last_draw_time = Instant::now();
+                Event::MainEventsCleared => {
+                    for (_, wnd) in self.windows.iter_mut() {
+                        //TODO: User configurable
+                        if wnd.ctx().last_draw_time.elapsed() >= Duration::from_millis(16.6 as u64)
+                        {
+                            wnd.view_mut().redraw();
+                            wnd.view_mut().last_draw_time = Instant::now();
+                        }
                     }
                 }
+                Event::RedrawRequested(id) => {
+                    let wnd = self.get_window_mut(&id).unwrap();
+                    let frame_ctx = FrameContext {
+                        delta_time: wnd.ctx().last_draw_time.elapsed().as_secs_f64(),
+                        elapsed_time: wnd.ctx().time_running().as_secs_f64(),
+                        input: input.clone(),
+                        // user_ctx: &user_ctx,
+                        eloop,
+                    };
+                    wnd.render_step(&frame_ctx);
+                    input.keyboard.clear_keys();
+                    wnd.view_mut().last_draw_time = Instant::now();
+                }
+                _ => {}
             }
-            Event::RedrawRequested(id) => {
-                let wnd = self.get_window_mut(&id).unwrap();
-                let frame_ctx = FrameContext {
-                    delta_time: wnd.ctx().last_draw_time.elapsed().as_secs_f64(),
-                    elapsed_time: wnd.ctx().time_running().as_secs_f64(),
-                    winit_event: &event,
-                    // user_ctx: &user_ctx,
-                    eloop,
-                };
-                wnd.render_step(&frame_ctx);
-                wnd.view_mut().last_draw_time = Instant::now();
-            }
-            _ => {}
         });
     }
 

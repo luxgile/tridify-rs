@@ -6,7 +6,7 @@ use wgpu::{BufferAddress, VertexAttribute, VertexBufferLayout};
 
 use crate::{
     core::Color,
-    input_layout::{GpuDataLayout, InputLayoutGroup, InputType},
+    {GpuDataLayout, InputLayoutGroup, InputType},
 };
 
 #[repr(C)]

@@ -1,6 +1,7 @@
 mod camera;
 mod color;
-pub mod input_layout;
+mod input;
+mod input_layout;
 mod math;
 mod transform;
 mod tridify;
@@ -8,6 +9,8 @@ mod window;
 
 pub use camera::*;
 pub use color::*;
+pub use input::*;
+pub use input_layout::*;
 pub use math::*;
 pub use transform::*;
 pub use tridify::*;

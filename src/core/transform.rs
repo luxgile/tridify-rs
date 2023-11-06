@@ -1,6 +1,6 @@
-use glam::{Affine3A, Mat3, Mat3A, Mat4, Quat, Vec3};
+use glam::{Affine3A, Mat3, Mat3A, Mat4, Quat, Vec3, Vec3A};
 
-use crate::input_layout::{GpuDataLayout, InputLayoutGroup, InputType};
+use crate::{GpuDataLayout, InputLayoutGroup, InputType};
 
 /// Representation for position, rotation and scale.
 #[derive(Clone, Copy)]
@@ -32,6 +32,14 @@ impl Transform {
         self.affine = Affine3A::from_scale_rotation_translation(scale, r, t);
     }
 
+    pub fn local_translate(&mut self, movement: Vec3) {
+        let local_move = self.affine.transform_vector3(movement);
+        self.translate(local_move);
+    }
+    pub fn translate(&mut self, movement: Vec3) {
+        self.affine.translation += Vec3A::from(movement);
+    }
+
     //TODO: Test if this actually works
     pub fn rotate(&mut self, rotation: Quat) {
         let rot_matrix = Mat3A::from_quat(rotation);
@@ -61,7 +69,7 @@ impl Default for Transform {
     fn default() -> Self { Transform::new(Vec3::ZERO, Quat::IDENTITY, Vec3::ONE) }
 }
 impl GpuDataLayout for Transform {
-    fn get_layout() -> crate::input_layout::InputLayoutGroup {
+    fn get_layout() -> crate::InputLayoutGroup {
         let mut instance_layout_group = InputLayoutGroup::new_instance();
         instance_layout_group
             .add_input(InputType::Vec4)
