@@ -2,7 +2,7 @@ use std::{error::Error, path::Path};
 
 use glam::{Mat4, Quat, Vec3};
 use tridify_rs::{
-    input_layout::{GpuDataLayout, InputLayout, InputLayoutGroup, InputType},
+    {GpuDataLayout, InputLayout, InputLayoutGroup, InputType},
     *,
 };
 

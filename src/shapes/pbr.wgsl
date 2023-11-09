@@ -67,7 +67,7 @@ var<private> PI : f32 = 3.141592;
 var<private> roughness : f32 = 0.5;
 var<private> metallic : f32 = 0.5;
 var<private> light_dir : vec3<f32> = vec3<f32>(0.3, 0.5, 0.3);
-var<private> light_color : vec3<f32> = vec3<f32>(1.0, 1.0, 1.0);
+var<private> light_color : vec3<f32> = vec3<f32>(23.47, 21.31, 20.79);
 var<private> view_pos : vec3<f32> = vec3<f32>(0.0, 0.0, 0.0); //TODO: Set this properly
 
 @group(1) @binding(0) var t_diffuse: texture_2d<f32>;

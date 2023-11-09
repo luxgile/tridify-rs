@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use glam::{Quat, Vec3};
+use glam::{Mat4, Quat, Vec3};
 use wgpu::BufferUsages;
 
 use crate::{
@@ -67,7 +67,7 @@ impl SkyboxPalette {
         let sampler = Sampler::new_default(gpu);
         let camera_view = GpuBuffer::new(
             gpu,
-            size_of::<Transform>() as u64,
+            size_of::<Mat4>() as u64,
             BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         );
         Self {
@@ -86,7 +86,7 @@ impl SkyboxPalette {
 
     pub fn update_camera(&mut self, gpu: &GpuCtx, camera: &Camera) {
         let mut camera = camera.clone();
-        camera.view.set_pos(Vec3::ZERO);
+        camera.view.position = Vec3::ZERO;
         let mvp = camera.build_camera_matrix();
         self.camera_view
             .write(gpu, bytemuck::cast_slice(&mvp.to_cols_array()));

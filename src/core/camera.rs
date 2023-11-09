@@ -1,4 +1,4 @@
-use glam::Mat4;
+use glam::{Affine3A, Mat4};
 
 use crate::{GpuBuffer, GpuCtx, ToGpuBuf, Transform};
 
@@ -42,12 +42,11 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(view: Transform, proj: Projection) -> Self {
-        Self { view, proj }
-    }
+    pub fn new(view: Transform, proj: Projection) -> Self { Self { view, proj } }
 
     pub fn build_camera_matrix(&self) -> Mat4 {
-        self.proj.build_matrix() * self.view.build_matrix()
+        self.proj.build_matrix()
+            * Mat4::from(Affine3A::look_to_lh(self.view.position, self.view.forward(), self.view.up()))
     }
 }
 

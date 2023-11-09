@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     //Sampler defines how the texture will be rendered in shapes.
     let sampler = Sampler::new_default(gpu_ctx);
 
-    let camera = Camera::new(
+    let mut camera = Camera::new(
         Transform::from_look_at(Vec3::NEG_Z * 10.0 + Vec3::Y * 10.0, Vec3::ZERO, Vec3::Y),
         Projection::default(),
     );
@@ -32,6 +32,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     brush.bind(0, 0, camera_buf.clone());
     brush.bind(1, 0, texture);
     brush.bind(1, 1, sampler);
+    brush.update(gpu_ctx);
 
     //Create and bake a shape batch with a cube in it.
     let shape_buffer = VertexBufferBuilder::new()
@@ -45,7 +46,27 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     //Setup the window render loop.
     window.set_render_loop(move |gpu, frame_ctx| {
-        let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32);
+        let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32 * 0.1);
+
+        for key in frame_ctx.input.keyboard.virtual_keys() {
+            match key {
+                winit::event::VirtualKeyCode::S => camera.view.local_translate(Vec3::Z),
+                winit::event::VirtualKeyCode::W => camera.view.local_translate(-Vec3::Z),
+                winit::event::VirtualKeyCode::A => camera.view.local_translate(Vec3::X),
+                winit::event::VirtualKeyCode::D => camera.view.local_translate(-Vec3::X),
+                winit::event::VirtualKeyCode::Q => camera.view.translate(Vec3::Y),
+                winit::event::VirtualKeyCode::E => camera.view.translate(-Vec3::Y),
+                winit::event::VirtualKeyCode::J => camera.view.rotate(Quat::from_rotation_y(0.1)),
+                winit::event::VirtualKeyCode::L => camera.view.rotate(Quat::from_rotation_y(-0.1)),
+                _ => {}
+            }
+        }
+        println!(
+            "Pos: {:?} - Fwd: {:?}",
+            camera.view.position,
+            camera.view.forward()
+        );
+
         let mvp = camera.build_camera_matrix() * model;
 
         //Updating the gpu buffer will update all brushes binded as well.

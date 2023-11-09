@@ -5,65 +5,65 @@ use crate::{GpuDataLayout, InputLayoutGroup, InputType};
 /// Representation for position, rotation and scale.
 #[derive(Clone, Copy)]
 pub struct Transform {
-    affine: Affine3A,
+    pub position: Vec3,
+    pub rotation: Quat,
+    pub scale: Vec3,
 }
 
 impl Transform {
     pub fn new(position: Vec3, rotation: Quat, scale: Vec3) -> Self {
         Self {
-            affine: Affine3A::from_scale_rotation_translation(scale, rotation, position),
+            position,
+            rotation,
+            scale,
         }
     }
 
-    pub fn get_pos(&self) -> Vec3 { self.affine.translation.into() }
-    pub fn set_pos(&mut self, pos: Vec3) { self.affine.translation = pos.into() }
-
-    //FIXME: Not very optimal
-    pub fn get_rot(&self) -> Quat { self.affine.to_scale_rotation_translation().1 }
-    pub fn set_rot(&mut self, rot: Quat) {
-        let (s, r, t) = self.affine.to_scale_rotation_translation();
-        self.affine = Affine3A::from_scale_rotation_translation(s, rot, t);
+    pub fn transform_dir(&self, dir: Vec3) -> Vec3 { self.build_matrix().transform_vector3(dir) }
+    pub fn transform_point(&self, point: Vec3) -> Vec3 {
+        self.build_matrix().transform_point3(point)
     }
 
-    //FIXME: Not very optimal
-    pub fn get_scale(&self) -> Vec3 { self.affine.to_scale_rotation_translation().0 }
-    pub fn set_scale(&mut self, scale: Vec3) {
-        let (s, r, t) = self.affine.to_scale_rotation_translation();
-        self.affine = Affine3A::from_scale_rotation_translation(scale, r, t);
-    }
+    pub fn forward(&self) -> Vec3 { self.rotation.mul_vec3(-Vec3::Z) }
+    pub fn up(&self) -> Vec3 { self.rotation.mul_vec3(-Vec3::Y) }
+    pub fn right(&self) -> Vec3 { self.rotation.mul_vec3(-Vec3::X) }
 
     pub fn local_translate(&mut self, movement: Vec3) {
-        let local_move = self.affine.transform_vector3(movement);
+        let local_move = self.transform_dir(movement);
         self.translate(local_move);
     }
-    pub fn translate(&mut self, movement: Vec3) {
-        self.affine.translation += Vec3A::from(movement);
-    }
+    pub fn translate(&mut self, movement: Vec3) { self.position += movement; }
 
-    //TODO: Test if this actually works
-    pub fn rotate(&mut self, rotation: Quat) {
-        let rot_matrix = Mat3A::from_quat(rotation);
-        self.affine.matrix3 *= rot_matrix;
-    }
+    pub fn rotate(&mut self, rotation: Quat) { self.rotation *= rotation; }
 
     /// Create transform based only on position. Rotation and scale will have default values.
     pub fn from_pos(position: Vec3) -> Self { Transform::new(position, Quat::IDENTITY, Vec3::ONE) }
 
     /// Create transform based on position and view direction.
     pub fn from_look_to(eye: Vec3, forward: Vec3, up: Vec3) -> Self {
+        let affine = Affine3A::look_to_lh(eye, forward, up);
+        let (scale, rotation, position) = affine.to_scale_rotation_translation();
         Self {
-            affine: Affine3A::look_to_lh(eye, forward, up),
+            scale,
+            rotation,
+            position,
         }
     }
 
     /// Create transform based on position and view point.
     pub fn from_look_at(eye: Vec3, center: Vec3, up: Vec3) -> Self {
+        let affine = Affine3A::look_at_lh(eye, center, up);
+        let (scale, rotation, position) = affine.to_scale_rotation_translation();
         Self {
-            affine: Affine3A::look_at_lh(eye, center, up),
+            scale,
+            rotation,
+            position,
         }
     }
 
-    pub fn build_matrix(&self) -> Mat4 { Mat4::from(self.affine) }
+    pub fn build_matrix(&self) -> Mat4 {
+        Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.position)
+    }
 }
 impl Default for Transform {
     fn default() -> Self { Transform::new(Vec3::ZERO, Quat::IDENTITY, Vec3::ONE) }

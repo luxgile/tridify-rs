@@ -23,13 +23,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let sampler = Sampler::new_default(gpu_ctx);
 
     let mut camera = Camera::new(
-        Transform::from_look_at(Vec3::NEG_Z * 10.0 + Vec3::Y * 10.0, Vec3::ZERO, Vec3::Y),
+        Transform::from_look_at(Vec3::NEG_Z * 10.0 + Vec3::Y * 5.0, Vec3::ZERO, Vec3::Y),
         Projection::default(),
     );
 
     //Create and bake a shape batch with a cube in it.
     let mut model = PbrModel::from_path(gpu_ctx, Path::new("examples/res/sphere.obj"));
-    model.transform.set_scale(Vec3::ONE * 3.0);
+    model.transform.scale = Vec3::ONE * 3.0;
     model.get_main_palette().set_diffuse(texture.clone());
     model.check(gpu_ctx);
 
@@ -44,11 +44,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut render_pass = pass_builder.start_render_pass(RenderOptions::default());
 
         for key in frame_ctx.input.keyboard.virtual_keys() {
-            match key {
+            match key.vkey {
                 winit::event::VirtualKeyCode::S => camera.view.local_translate(Vec3::Z),
                 winit::event::VirtualKeyCode::W => camera.view.local_translate(-Vec3::Z),
-                winit::event::VirtualKeyCode::A => camera.view.local_translate(Vec3::X),
-                winit::event::VirtualKeyCode::D => camera.view.local_translate(-Vec3::X),
+                winit::event::VirtualKeyCode::D => camera.view.local_translate(Vec3::X),
+                winit::event::VirtualKeyCode::A => camera.view.local_translate(-Vec3::X),
                 winit::event::VirtualKeyCode::Q => camera.view.translate(Vec3::Y),
                 winit::event::VirtualKeyCode::E => camera.view.translate(-Vec3::Y),
                 winit::event::VirtualKeyCode::J => camera.view.rotate(Quat::from_rotation_y(0.1)),
