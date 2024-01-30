@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let model = Mat4::from_rotation_y(frame_ctx.elapsed_time as f32 * 0.1);
 
         for key in frame_ctx.input.keyboard.virtual_keys() {
-            match key {
+            match key.vkey {
                 winit::event::VirtualKeyCode::S => camera.view.local_translate(Vec3::Z),
                 winit::event::VirtualKeyCode::W => camera.view.local_translate(-Vec3::Z),
                 winit::event::VirtualKeyCode::A => camera.view.local_translate(Vec3::X),
